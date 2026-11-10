@@ -1,0 +1,42 @@
+name: A股战法扫描
+
+on:
+  schedule:
+    # GitHub Actions 用 UTC 时间，北京时间 = UTC+8
+    # 09:20 北京时间 = 01:20 UTC（盘前，用昨收数据算）
+    # 14:30 北京时间 = 06:30 UTC（尾盘）
+    - cron: '20 1 * * 1-5'
+    - cron: '30 6 * * 1-5'
+  workflow_dispatch:      # 手动触发
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 跑扫描
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ALERT_TO: ${{ secrets.ALERT_TO }}
+        run: python scanner.py
+
+      - name: 提交结果
+        run: |
+          git config user.name "signal-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add docs/ || true
+          git diff --staged --quiet || git commit -m "scan $(date -u +%Y%m%d-%H%M)"
+          git push || true
