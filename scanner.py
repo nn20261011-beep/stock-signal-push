@@ -19,6 +19,7 @@ from email.mime.multipart import MIMEMultipart
 from email.header import Header
 
 BJ = timezone(timedelta(hours=8))
+INTRADAY = os.environ.get('INTRADAY', '') == '1'   # 盘中模式：不写状态库、不做收盘确认
 UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
 
@@ -345,6 +346,43 @@ PLAN_HOLD = {
 }
 
 
+def push_github_issue(title, body):
+    """有信号时创建 GitHub Issue —— GitHub 会自动推送通知到手机 App / 邮箱"""
+    tk = os.environ.get('GH_TOKEN', '')
+    repo = os.environ.get('GH_REPO', '')
+    if not tk or not repo:
+        return False
+    try:
+        data = json.dumps({'title': title, 'body': body}).encode('utf-8')
+        req = urllib.request.Request(
+            'https://api.github.com/repos/%s/issues' % repo, data=data,
+            headers={'Authorization': 'token ' + tk, 'Accept': 'application/vnd.github+json',
+                     'Content-Type': 'application/json', 'User-Agent': 'signal-bot'})
+        r = json.loads(urllib.request.urlopen(req, timeout=20).read().decode('utf-8'))
+        print('[OK] Issue 已创建 #%s' % r.get('number'))
+        return True
+    except Exception as e:
+        print('[WARN] 创建 Issue 失败: %s' % e)
+        return False
+
+
+def load_sent():
+    p = os.path.join('docs', 'sent_today.json')
+    if not os.path.exists(p):
+        return {}
+    try:
+        d = json.load(open(p, encoding='utf-8'))
+        return d if d.get('day') == now_bj().strftime('%Y-%m-%d') else {}
+    except Exception:
+        return {}
+
+
+def save_sent(sent):
+    os.makedirs('docs', exist_ok=True)
+    json.dump(sent, open(os.path.join('docs', 'sent_today.json'), 'w', encoding='utf-8'),
+              ensure_ascii=False)
+
+
 def send_mail(subject, html, to_addr):
     user = os.environ.get('SMTP_USER', '')
     pw = os.environ.get('SMTP_PASS', '')
@@ -407,17 +445,28 @@ import state as ST
 
 # 各战法在什么状态下有效（来自 library11.py 10年回测）
 PLAN_GATE = {
-    # 战法: [(状态字段, 判定函数, 说明), ...]  —— 满足任一即可
-    'x3_volume': [('冰点期', 'regime', '冰点期×涨停升温：T+5 +3.74%/胜率68.5%（10年8正）')],
-    'dip_buy':   [('冰点期', 'regime', '冰点期×涨停升温：T+5 +3.82%/胜率65.1%（10年7正）')],
-    'deep_v':    [('冰点期', 'regime', '冰点期×涨停降温：T+5 +2.13%/胜率58.9%（12年8正）')],
-    'gold_core': [('低迷期', 'regime', '低迷期×牛市：T+5 +1.83%/胜率55.8%（10年8正）')],
-    'low_limit': [('高潮期', 'regime', '高潮期×熊市：T+5 +6.02%/胜率65.9%（11年9正）'),
-                  ('高潮期', 'regime', '高潮期：T+5 +5.22%/胜率63.2%（11年9正）')],
-    'oversold':  [('冰点期', 'regime', '冰点期×熊市：T+5 +6.19%/胜率70.6%（11年9正）'),
-                  ('发酵期', 'regime', '发酵期×熊市：T+5 +4.41%/胜率62.5%（11年10正）')],
+    # 每个「情绪基调」配最合适的战法（按 10 年回测 T+5 排序，样本>=1000）
+    # 数据源：library11.py 405 个状态格子 + build_pools8.py 自建打法
+    '冰点期': {
+        'oversold':  'T+5 +6.19%/胜率70.6%（冰点期×熊市，1204笔，11年9正）',
+        'dip_buy':   'T+5 +2.98%/胜率62.3%（15710笔，12年8正）',
+        'x3_volume': 'T+5 +2.68%/胜率58.0%（1917笔，12年8正）',
+        'deep_v':    'T+5 +1.47%/胜率57.9%（60893笔，12年8正）',
+    },
+    '高潮期': {
+        'low_limit': 'T+5 +5.22%/胜率63.2%（最高标低位接力，1247笔，11年9正）',
+    },
+    '发酵期': {
+        'oversold':  'T+5 +4.41%/胜率62.5%（发酵期×熊市，3969笔，11年10正）',
+    },
+    '分化期': {
+        'dip_buy':   'T+5 +1.38%/胜率53.8%（26042笔，12年8正）',
+    },
+    '低迷期': {
+        'x3_volume': 'T+5 +0.69%/胜率51.5%（7146笔，12年9正）',
+    },
 }
-# 明确不推的战法（10年回测负期望）
+
 PLAN_BLOCK = {'yj_pick', 'jkb_pick', 'limit_up', 'x369'}
 
 
@@ -460,11 +509,10 @@ def main():
 
     # 今日允许使用的战法
     allowed = set()
-    for pid, gates in PLAN_GATE.items():
-        for gname, gtype, note in gates:
-            if gtype == 'regime' and gname == regime:
-                allowed.add(pid)
-                print('  ✅ 允许 %s（%s）' % (PLAN_NAMES.get(pid, pid), note))
+    today_gate = PLAN_GATE.get(regime, {})
+    for pid, note in today_gate.items():
+        allowed.add(pid)
+        print('  ✅ 允许 %-8s（%s）' % (PLAN_NAMES.get(pid, pid), note))
     if not allowed:
         print('  ⛔ 今日状态下无战法达标 → 建议空仓')
 
@@ -546,8 +594,9 @@ def main():
                 '规则来自持仓网站 playbook.js · 10年回测验证 · 次日开盘买入' 
                 '</div></div>') % (len(hits), now, rows)
 
-    # ---- 追加今日状态到历史库 ----
-    try:
+    # ---- 追加今日状态到历史库（盘中模式跳过，避免用未收盘数据污染）----
+    if not INTRADAY:
+      try:
         zt_prev_codes = ST.load_zt_prev()
         # 算涨停股的连板数（查 K 线）
         zt_codes_today = [c for c, q in quotes.items() if q['pct'] >= 9.8]
@@ -573,8 +622,32 @@ def main():
             today_str, n_rows, m_today['zt_n'], m_today['dt_n'], m_today['max_bd']))
         print('     明日 regime 预判 = %s' % ST.calc_regime({
             'max_bd': m_today['max_bd'], 'earn': m_today['earn']}))
-    except Exception as e:
+      except Exception as e:
         print('[WARN] 更新状态库失败: %s' % e)
+
+    # ---- 推送：只推新信号（当天已推过的不重复）----
+    sent = load_sent()
+    if sent.get('day') != now_bj().strftime('%Y-%m-%d'):
+        sent = {'day': now_bj().strftime('%Y-%m-%d'), 'keys': []}
+    sent_keys = set(sent.get('keys', []))
+    fresh = [h for h in hits if (h['code'] + '|' + h['plan']) not in sent_keys]
+    if fresh:
+        lines = []
+        for h in fresh:
+            lines.append('- **%s**（%s）%.2f元 %+.2f%% · %s · 建议持%d日\n  - %s' % (
+                h['name'], h['code'], h['price'], h['pct'],
+                h['plan_name'], h['hold'], h['reason']))
+        title = '🎯 %s 信号 %d 只（%s）' % (now_bj().strftime('%m-%d %H:%M'), len(fresh), regime)
+        body = ('**市场状态**：%s\n\n**命中**：\n%s\n\n'
+                '> 规则来自 10 年回测，历史胜率见下表。不是投资建议。' % (regime, '\n'.join(lines)))
+        push_github_issue(title, body)
+        for h in fresh:
+            sent_keys.add(h['code'] + '|' + h['plan'])
+        sent['keys'] = sorted(sent_keys)
+        save_sent(sent)
+        print('[OK] 新信号 %d 条已推送' % len(fresh))
+    else:
+        print('[OK] 无新信号（当天已推 %d 条）' % len(sent_keys))
 
     # 写 HTML 页面（GitHub Pages 可直接访问）
     try:
