@@ -10,6 +10,10 @@ on:
         description: '只生成不发信'
         required: false
         default: 'false'
+      force:
+        description: '强制发送（忽略当天已发）'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -44,6 +48,8 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.dry }}" = "true" ]; then
             python push_lib.py --dry
+          elif [ "${{ github.event.inputs.force }}" = "true" ]; then
+            python push_lib.py --force
           else
             python push_lib.py
           fi
