@@ -2,10 +2,16 @@ name: 每日选股信号推送
 
 on:
   schedule:
-    # UTC 01:00 = 北京时间 09:00（工作日），09:20 前送达，开盘前可见
-    - cron: '0 1 * * 1-5'
+    # 北京时间 20:00 = UTC 12:00 → 晚间：13 套隔夜策略 + 一进二候选池
+    - cron: '0 12 * * 1-5'
+    # 北京时间 09:22 = UTC 01:22 → 提前唤醒，脚本自旋等到 09:25:35 竞价撮合后再读数
+    - cron: '22 1 * * 1-5'
   workflow_dispatch:
     inputs:
+      mode:
+        description: 'lib=13套隔夜策略 / scan=一进二候选池 / confirm=竞价确认'
+        required: false
+        default: 'lib'
       dry:
         description: '只生成不发信'
         required: false
@@ -23,24 +29,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  scan:
+  evening:
+    if: github.event.schedule == '0 12 * * 1-5' || github.event.inputs.mode == 'lib' || github.event.inputs.mode == 'scan'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
+      - run: pip install -q numpy==2.1.3 pandas==2.2.3
 
-      - name: 安装依赖
-        run: pip install -q numpy==2.1.3 pandas==2.2.3
-
-      - name: 读历史缓存 + 抓当日增量（约 5 秒）
+      - name: 读历史缓存 + 抓当日增量
         run: python live_fetch.py
 
-      - name: 多策略扫描 + 发送邮件
+      - name: 13 套隔夜策略（次日开盘买）
+        if: github.event.inputs.mode != 'scan'
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
@@ -48,21 +53,65 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.dry }}" = "true" ]; then
             python push_lib.py --dry
-          elif [ "${{ github.event.inputs.force }}" = "true" ]; then
-            python push_lib.py --force
           else
             python push_lib.py
           fi
 
-      - name: 归档信号与实盘校验日志
+      - name: 一进二候选池（等次日竞价低开确认）
+        if: github.event.inputs.mode != 'lib'
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: |
+          if [ "${{ github.event.inputs.dry }}" = "true" ]; then
+            python auction_push.py scan --dry
+          else
+            python auction_push.py scan
+          fi
+
+      - name: 归档日志
         run: |
           git config user.name "signal-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add -f _push_logs _hist.pkl.gz 2>/dev/null || true
-          if git diff --cached --quiet; then
-            echo "无新增日志"
+          git add -f _push_logs _auction_logs _hist.pkl.gz 2>/dev/null || true
+          if git diff --cached --quiet; then echo "无新增"; else
+            git commit -m "evening logs $(date -u +%F)"
+            git pull --rebase origin main || true
+            git push origin main || true
+          fi
+
+  auction:
+    if: github.event.schedule == '22 1 * * 1-5' || github.event.inputs.mode == 'confirm'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install -q numpy==2.1.3 pandas==2.2.3
+
+      - name: 竞价确认（自旋等到 09:25:35）
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: |
+          if [ "${{ github.event.inputs.dry }}" = "true" ]; then
+            python auction_push.py confirm --wait --dry
           else
-            git commit -m "signal logs $(date -u +%F)"
+            python auction_push.py confirm --wait
+          fi
+
+      - name: 归档日志
+        run: |
+          git config user.name "signal-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -f _auction_logs 2>/dev/null || true
+          if git diff --cached --quiet; then echo "无新增"; else
+            git commit -m "auction logs $(date -u +%F)"
             git pull --rebase origin main || true
             git push origin main || true
           fi
