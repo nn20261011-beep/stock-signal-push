@@ -105,12 +105,13 @@ def market_state(K, today):
         out[d] = dict(zt_n=len(zt), dt_n=len(dt), max_bd=maxbd, earn=round(earn,2) if np.isfinite(earn) else 0,
                       up=round(up,1))
     # regime 用前一日 max_bd / earn（无未来函数）
-    ms = pd.read_pickle(os.path.join(BASE,'_market_state2.pkl')).set_index('day').to_dict('index')
-    td = pd.read_pickle(os.path.join(BASE,'_trend_state.pkl')).set_index('day').to_dict('index')
+    # 🔴 用纯字符串 CSV，避免 pandas ArrowString 依赖 pyarrow（云端安装失败）
+    ms = pd.read_csv(os.path.join(BASE,'state_regime.csv')).set_index('day')['regime'].to_dict()
+    td = pd.read_csv(os.path.join(BASE,'state_bb.csv')).set_index('day')['bb'].to_dict()
     res = []
     for d in sorted(out):
         if d in ms and d in td:
-            res.append(dict(day=d, regime=ms[d].get('regime'), bb=td[d].get('bb'),
+            res.append(dict(day=d, regime=ms.get(d), bb=td.get(d),
                             zt_n=out[d]['zt_n'], max_bd=out[d]['max_bd'], earn=out[d]['earn'],
                             src='历史库'))
             continue
