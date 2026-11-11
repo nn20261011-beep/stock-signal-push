@@ -1,12 +1,6 @@
 name: A股战法扫描
 
 on:
-  schedule:
-    # GitHub Actions 用 UTC 时间，北京时间 = UTC+8
-    # 09:20 北京时间 = 01:20 UTC（盘前，用昨收数据算）
-    # 14:30 北京时间 = 06:30 UTC（尾盘）
-    - cron: '20 1 * * 1-5'
-    - cron: '30 6 * * 1-5'
   workflow_dispatch:      # 手动触发
 
 permissions:
