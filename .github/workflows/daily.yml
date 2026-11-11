@@ -33,7 +33,7 @@ jobs:
       - name: 安装依赖
         run: pip install -q numpy==2.1.3 pandas==2.2.3
 
-      - name: 抓全市场最新日线
+      - name: 读历史缓存 + 抓当日增量（约 5 秒）
         run: python live_fetch.py
 
       - name: 多策略扫描 + 发送邮件
@@ -52,7 +52,7 @@ jobs:
         run: |
           git config user.name "signal-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add -f _push_logs 2>/dev/null || true
+          git add -f _push_logs _hist.pkl.gz 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "无新增日志"
           else

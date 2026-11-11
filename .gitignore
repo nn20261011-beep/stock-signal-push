@@ -1,4 +1,4 @@
-_push_logs/
+_push_logs/*
 !_push_logs/*.csv
 !_push_logs/*.json
 !_push_logs/send.log
