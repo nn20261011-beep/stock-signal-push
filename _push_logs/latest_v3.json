@@ -1,88 +1,40 @@
 {
- "version": "v3.0 / 战法池2026-11-12 / 74.99万战法穷举 / 30条稳健战法",
- "time": "2026-11-12 22:36:58",
+ "version": "v3.1 / 战法池2026-11-12 / 101.0万战法穷举 / 52条战法(含22条题材战法)",
+ "time": "2026-11-12 22:57:55",
  "base_day": "2026-11-12",
- "hits": 176,
+ "hits": 33,
  "signals": [
   {
    "code": "000573",
    "name": "粤宏远Ａ",
-   "ann": 24.1133098387,
-   "mdd": -5.7014196557,
+   "state_deq": 5.16,
    "sell": "sl5",
-   "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]"
-  },
-  {
-   "code": "002623",
-   "name": "亚玛顿",
-   "ann": 24.1133098387,
-   "mdd": -5.7014196557,
-   "sell": "sl5",
-   "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]"
-  },
-  {
-   "code": "002242",
-   "name": "九阳股份",
-   "ann": 23.1106744291,
-   "mdd": -7.8733573822,
-   "sell": "sl5",
-   "conds": "r5p in (3.923, +inf] & vol_std in (3.378, +inf] & amp in (-inf, 1.849]"
-  },
-  {
-   "code": "603056",
-   "name": "德邦股份",
-   "ann": 23.1106744291,
-   "mdd": -7.8733573822,
-   "sell": "sl5",
-   "conds": "r5p in (3.923, +inf] & vol_std in (3.378, +inf] & amp in (-inf, 1.849]"
-  },
-  {
-   "code": "003010",
-   "name": "若羽臣",
-   "ann": 21.9673374068,
-   "mdd": -10.9295014239,
-   "sell": "sl5",
-   "conds": "gap20 in (4.152, +inf] & vol_std in (3.378, +inf] & amp in (-inf, 1.849]"
-  },
-  {
-   "code": "000011",
-   "name": "深物业A",
-   "ann": 21.0931576243,
-   "mdd": -6.6133043007,
-   "sell": "sl5",
-   "conds": "gap5 in (1.802, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]"
+   "cluster": 0,
+   "conds": "gap10 in (2.788, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]"
   },
   {
    "code": "000637",
    "name": "茂化实华",
-   "ann": 21.0931576243,
-   "mdd": -6.6133043007,
+   "state_deq": 5.16,
    "sell": "sl5",
-   "conds": "gap5 in (1.802, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]"
+   "cluster": 0,
+   "conds": "gap10 in (2.788, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]"
   },
   {
-   "code": "001328",
-   "name": "登康口腔",
-   "ann": 21.0050416481,
-   "mdd": -13.6849217862,
+   "code": "000011",
+   "name": "深物业A",
+   "state_deq": 4.3,
    "sell": "sl5",
-   "conds": "gap60 in (6.923, +inf] & vol_std in (3.378, +inf] & amp in (-inf, 1.849]"
+   "cluster": 0,
+   "conds": "gap5 in (1.802, +inf] & vol_r in (-inf, 0.609] & zt120 in (3.0, +inf]"
   },
   {
-   "code": "603351",
-   "name": "威尔药业",
-   "ann": 20.7316651834,
-   "mdd": -7.2176952811,
+   "code": "002869",
+   "name": "金溢科技",
+   "state_deq": 4.3,
    "sell": "sl5",
-   "conds": "p60 in (85.0, +inf] & gap5 in (1.802, +inf] & amp in (-inf, 1.849]"
-  },
-  {
-   "code": "002086",
-   "name": "东方海洋",
-   "ann": 20.6971436058,
-   "mdd": -12.149912054,
-   "sell": "sl5",
-   "conds": "dd250 in (-16.828, +inf] & up_shadow in (2.143, +inf] & is_zt in (0.0, +inf]"
+   "cluster": 0,
+   "conds": "gap5 in (1.802, +inf] & vol_r in (-inf, 0.609] & zt120 in (3.0, +inf]"
   }
  ]
 }
