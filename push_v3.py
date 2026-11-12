@@ -147,6 +147,19 @@ def main():
     feats = build_features(K)
     today = max(f['day'] for f in feats.values())
 
+    # ---- 合并题材/身位特征（22 条题材战法需要） ----
+    try:
+        import concept_feat
+        cf = concept_feat.compute(K)
+        for c, v in cf.items():
+            if c in feats:
+                feats[c].update(v)
+        print('题材特征已合并 %d 只' % len(cf), flush=True)
+    except Exception as e:
+        print('题材特征计算失败（题材战法本轮不参与）：%s' % e, flush=True)
+        cf = {}
+        S = [s for s in S if 'c_' not in s['conds']]
+
     # ---- 去重：3 个错峰触发点，同一天只发一封 ----
     # 依据 send.log 里当天带 v3 标记的 OK 记录，不依赖状态文件（状态文件可能是 dry-run 残留）
     if not dry and not force:
