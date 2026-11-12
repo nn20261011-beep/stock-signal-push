@@ -176,6 +176,30 @@ def main():
                      or str(name_of.get(c, '')).replace(' ', '').startswith(('XR', 'XD', 'DR')))}
     print('基准日 %s / 候选 %d 只 / 战法 %d 条' % (today, len(feats), len(S)), flush=True)
 
+    # ---- 判天：定今日市场状态 → 从调度表取该状态专属战法 ----
+    cluster, top3, ms = None, None, None
+    try:
+        import market_state
+        ms = market_state.compute(K)
+        cluster, top3 = market_state.classify(ms)
+        print('今日市场状态：类%s（最近3类距离 %s）' % (cluster, top3), flush=True)
+        sp = os.path.join(BASE, 'strategies_by_state.json')
+        if os.path.exists(sp):
+            SCH = json.load(open(sp, encoding='utf-8'))
+            got = SCH.get(str(cluster)) or []
+            if got:
+                S = got
+                print('调度表命中：类%s → %d 条专属战法（该状态历史日等权 %s）' % (
+                    cluster, len(S),
+                    ' / '.join('%+.2f%%' % x['state_deq'] for x in S[:3])), flush=True)
+            else:
+                print('调度表里类%s 无可用战法（样本不足），今日空仓' % cluster, flush=True)
+                S = []
+        else:
+            print('无调度表，用通用战法池兜底', flush=True)
+    except Exception as e:
+        print('判天失败，本轮全量战法兜底：%s' % e, flush=True)
+
     hits = []
     for si, s in enumerate(S):
         for c, f in feats.items():
@@ -184,11 +208,13 @@ def main():
 
     # 去重：同一票保留年化最高的战法
     bycode = {}
-    for h in sorted(hits, key=lambda x: -x['s']['ann']):
+    def _rank(s):
+        return s.get('ann', s.get('state_deq', s.get('best_deq', 0)))
+    for h in sorted(hits, key=lambda x: -_rank(x['s'])):
         bycode.setdefault(h['code'], h)
     # 按战法分散：每条战法最多 2 只，全局最多 10 只
     per_sid, ranked = {}, []
-    for h in sorted(bycode.values(), key=lambda x: -x['s']['ann']):
+    for h in sorted(bycode.values(), key=lambda x: -_rank(x['s'])):
         sid = h['sid']
         if per_sid.get(sid, 0) >= 2:
             continue
@@ -203,6 +229,15 @@ def main():
     body = ['<div style="font-family:Microsoft YaHei,sans-serif;max-width:780px;margin:auto;color:#111">']
     body.append('<h2 style="font-size:18px">%s 收盘信号 · 次日开盘买入</h2>' % today)
     body.append('<p style="font-size:12px;color:#6b7280">策略版本：%s<br>生成时间：%s（北京时间）</p>' % (VERSION, tstr))
+    if ms:
+        body.append('<p style="font-size:13px;background:#eef2ff;padding:8px;border-radius:6px">'
+                    '<b>今日判天：类%s</b> ｜ 涨停 %.0f 家 / 跌停 %.0f 家 / 最高 %d 板 / '
+                    '晋级率 %s / 赚钱效应 %s<br><span style="font-size:12px;color:#6b7280">'
+                    '只启用该状态下历史为正的战法，共 %d 条在跑</span></p>' % (
+                        cluster, ms['zt_n'], ms['dt_n'], ms['max_bd'],
+                        ('%.1f%%' % ms['promote']) if np.isfinite(ms['promote']) else '—',
+                        ('%+.2f%%' % ms['earn']) if np.isfinite(ms['earn']) else '—',
+                        len(S)))
     if ranked:
         sell_desc = {'sl5': '跌 5% 立即止损 / 最长持 10 日',
                      'sl8': '跌 8% 立即止损 / 最长持 10 日',
@@ -222,26 +257,31 @@ def main():
                     '<b>卖出按各自战法执行</b>：%s</p>' % sell_txt)
         body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
         body.append('<tr style="background:#f9fafb"><th align=left>代码</th><th align=left>名称</th>'
-                    '<th align=right>今收</th><th align=left>命中战法</th><th align=right>年化</th>'
-                    '<th align=right>回撤</th><th align=right>月开仓</th><th align=left>卖出</th></tr>')
+                    '<th align=right>今收</th><th align=left>命中战法</th><th align=right>该状态日等权</th>'
+                    '<th align=left>卖出</th></tr>')
+        SELL_TXT = {'sl5': '跌5%止损/上限10日', 'sl8': '跌8%止损/上限10日',
+                    'rbreak': '断板次日走', 'r10': '持满10日', 'r5': '持满5日',
+                    'r3': '持满3日', 'tp8': '涨8%止盈', 'tp5': '涨5%止盈',
+                    'ma5_n': '跌破MA5走', 'ma10_n': '跌破MA10走'}
         for h in ranked:
             s, f = h['s'], h['feat']
-            sell = '止损5% / 上限10日' if s['sell'] == 'sl5' else (
-                   '断板次日走' if s['sell'] == 'rbreak' else '止损8% / 上限10日')
+            v = s.get('state_deq', s.get('best_deq', 0))
             body.append('<tr><td><b>%s</b></td><td>%s</td><td align=right>%.2f</td>'
-                        '<td style="font-size:11px">%s</td><td align=right>+%.1f%%</td>'
-                        '<td align=right>%.1f%%</td><td align=right>%.1f</td><td>%s</td></tr>' % (
+                        '<td style="font-size:11px">%s</td><td align=right>%+.2f%%</td>'
+                        '<td style="font-size:12px">%s</td></tr>' % (
                             h['code'], h['name'], f['close'], str(s['conds'])[:52],
-                            s['ann'], s['mdd'], s['per_mon'], sell))
+                            v, SELL_TXT.get(s['sell'], s['sell'])))
         body.append('</table>')
         body.append('<p style="font-size:12px;color:#6b7280;margin-top:12px">战法来自 2016–2026 全市场 '
                     '559 万样本、74.99 万个候选战法的穷举筛选；所列年化/回撤为单票 20% 仓位、'
                     '最多同时 3 只的组合回测结果。三段验证全正，9/9 个市场状态为正。</p>')
         subj = '【选股信号 %s】%s %d只 · 次日开盘买' % ('v3', today, len(ranked))
     else:
+        if not S and ms:
+            body.append('<p style="font-size:14px;color:#c00"><b>今日空仓</b>：当前市场状态（类%s）下，'
+                        '52 条战法历史上均为负或无记录，不出手。</p>' % cluster)
         body.append('<p style="font-size:14px">今日无战法命中，<b>不买</b>。</p>')
-        body.append('<p style="font-size:12px;color:#6b7280">30 条稳健战法均未触发。'
-                    '这些战法要求「缩量 + 窄幅 + 站上均线 + 温和上涨」，没有符合条件就不出手。</p>')
+        body.append('<p style="font-size:12px;color:#6b7280">战法要求「缩量 + 窄幅 + 站上均线 + 温和上涨」，没有符合条件就不出手。</p>')
         subj = '【选股信号 v3】%s 无信号 · 不买' % today
     body.append('</div>')
     html = ''.join(body)
@@ -249,7 +289,8 @@ def main():
     open(os.path.join(LOG, 'mail_%s_v3.html' % today), 'w', encoding='utf-8').write(html)
     json.dump(dict(version=VERSION, time=tstr, base_day=today,
                    hits=len(hits), signals=[dict(code=h['code'], name=h['name'],
-                   ann=h['s']['ann'], mdd=h['s']['mdd'], sell=h['s']['sell'],
+                   state_deq=h['s'].get('state_deq', h['s'].get('best_deq', 0)),
+                   sell=h['s']['sell'], cluster=cluster,
                    conds=h['s']['conds']) for h in ranked]),
               open(os.path.join(LOG, 'latest_v3.json'), 'w', encoding='utf-8'),
               ensure_ascii=False, indent=1)
@@ -257,7 +298,9 @@ def main():
     if dry:
         print('[DRY] %s' % subj, flush=True)
         for h in ranked:
-            print('  %s %s 年化+%.1f%% 回撤%.1f%%' % (h['code'], h['name'], h['s']['ann'], h['s']['mdd']), flush=True)
+            print('  %s %s 该状态日等权%+.2f%% 卖点%s' % (
+                h['code'], h['name'], h['s'].get('state_deq', h['s'].get('best_deq', 0)),
+                h['s']['sell']), flush=True)
     else:
         send(subj, html)
         print('已发：%s' % subj, flush=True)
