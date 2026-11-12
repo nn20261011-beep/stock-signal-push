@@ -1,52 +1,68 @@
 {
  "0": [
   {
-   "conds": "gap10 in (2.788, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]",
-   "sell": "sl5",
-   "best_deq": 3.683,
-   "state_deq": 5.16,
-   "state_days": 96,
-   "k": 3
-  },
-  {
-   "conds": "gap20 in (4.152, +inf] & vol_r in (-inf, 0.609] & maxbd250 in (2.0, +inf]",
-   "sell": "sl5",
-   "best_deq": 2.516,
-   "state_deq": 4.94,
-   "state_days": 75,
-   "k": 3
-  },
-  {
-   "conds": "gap5 in (1.802, +inf] & vol_r in (-inf, 0.609] & zt120 in (3.0, +inf]",
-   "sell": "sl5",
-   "best_deq": 3.281,
-   "state_deq": 4.3,
+   "conds": "gap5 in (-inf, -0.981] & zt120 in (-inf, 0.0] & vol_r in (1.063, +inf] & chg in (0.73, +inf]",
+   "sell": "sl8",
+   "best_deq": 0.627,
+   "state_deq": 8.85,
    "state_days": 80,
-   "k": 3
-  },
-  {
-   "conds": "r5p in (3.923, +inf] & gap20 in (4.152, +inf] & vol_r in (-inf, 0.609]",
-   "sell": "sl5",
-   "best_deq": 2.794,
-   "state_deq": 4.11,
-   "state_days": 113,
-   "k": 3
-  },
-  {
-   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & dd250 in (-inf, -42.569] & p60 in (78.333, +inf]",
-   "sell": "r10",
-   "best_deq": 1.927,
-   "state_deq": 4.04,
-   "state_days": 65,
    "k": 4
   },
   {
-   "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & maxbd250 in (2.0, +inf]",
+   "conds": "gap60 in (-5.018, 2.589] & gap10 in (-inf, -1.589] & chg in (0.73, +inf] & v5_20 in (1.079, +inf]",
    "sell": "sl5",
-   "best_deq": 2.74,
-   "state_deq": 4.02,
-   "state_days": 82,
-   "k": 3
+   "best_deq": 0.499,
+   "state_deq": 6.91,
+   "state_days": 81,
+   "k": 4
+  },
+  {
+   "conds": "price in (6.03, 10.09] & r5p in (2.984, +inf] & zt120 in (-inf, 0.0] & vol_r in (-inf, 0.653]",
+   "sell": "sl8",
+   "best_deq": 0.621,
+   "state_deq": 6.84,
+   "state_days": 48,
+   "k": 4
+  },
+  {
+   "conds": "price in (6.03, 10.09] & up250 in (49.896, +inf] & fmc in (-inf, 36.734] & zt120 in (-inf, 0.0]",
+   "sell": "r10",
+   "best_deq": 0.843,
+   "state_deq": 6.21,
+   "state_days": 87,
+   "k": 4
+  },
+  {
+   "conds": "gap60 in (-5.018, 2.589] & gap10 in (-inf, -1.589] & vol_r in (1.063, +inf] & chg in (0.73, +inf]",
+   "sell": "sl5",
+   "best_deq": 0.517,
+   "state_deq": 6.14,
+   "state_days": 81,
+   "k": 4
+  },
+  {
+   "conds": "gap5 in (-inf, -0.981] & fmc in (111.388, +inf] & zt120 in (-inf, 0.0] & chg in (0.73, +inf]",
+   "sell": "r10",
+   "best_deq": 0.747,
+   "state_deq": 5.98,
+   "state_days": 94,
+   "k": 4
+  },
+  {
+   "conds": "price in (7.19, 14.22] & gap5 in (-inf, -0.981] & vol_r in (1.063, +inf] & chg in (0.73, +inf]",
+   "sell": "r5",
+   "best_deq": 0.632,
+   "state_deq": 5.46,
+   "state_days": 73,
+   "k": 4
+  },
+  {
+   "conds": "price in (7.19, 14.22] & gap5 in (-inf, -0.981] & zt120 in (-inf, 0.0] & chg in (0.73, +inf]",
+   "sell": "sl8",
+   "best_deq": 0.587,
+   "state_deq": 5.37,
+   "state_days": 72,
+   "k": 4
   }
  ],
  "1": [
@@ -54,399 +70,527 @@
    "conds": "up250 in (58.039, +inf] & amp in (-inf, 1.849] & bd in (0.0, +inf]",
    "sell": "sl5",
    "best_deq": 5.005,
-   "state_deq": 13.38,
-   "state_days": 72,
+   "state_deq": 15.59,
+   "state_days": 66,
    "k": 3
   },
   {
    "conds": "up250 in (58.039, +inf] & amp in (-inf, 1.849] & is_zt in (0.0, +inf]",
    "sell": "sl5",
    "best_deq": 5.005,
-   "state_deq": 13.38,
-   "state_days": 72,
+   "state_deq": 15.59,
+   "state_days": 66,
    "k": 3
   },
-  {
-   "conds": "dd250 in (-16.828, +inf] & up_shadow in (2.143, +inf] & bd in (0.0, +inf]",
-   "sell": "sl5",
-   "best_deq": 3.794,
-   "state_deq": 13.13,
-   "state_days": 87,
-   "k": 3
-  },
-  {
-   "conds": "dd250 in (-16.828, +inf] & up_shadow in (2.143, +inf] & is_zt in (0.0, +inf]",
-   "sell": "sl5",
-   "best_deq": 3.794,
-   "state_deq": 13.13,
-   "state_days": 87,
-   "k": 3
-  },
-  {
-   "conds": "r60p in (13.32, +inf] & amp in (-inf, 1.849] & is_zt in (0.0, +inf]",
-   "sell": "sl5",
-   "best_deq": 4.815,
-   "state_deq": 12.98,
-   "state_days": 81,
-   "k": 3
-  },
-  {
-   "conds": "r60p in (13.32, +inf] & amp in (-inf, 1.849] & bd in (0.0, +inf]",
-   "sell": "sl5",
-   "best_deq": 4.815,
-   "state_deq": 12.98,
-   "state_days": 81,
-   "k": 3
-  }
- ],
- "2": [
-  {
-   "conds": "gap10 in (2.788, +inf] & amp in (-inf, 1.849] & c_gap in (-1.566, 0.0]",
-   "sell": "sl8",
-   "best_deq": 1.919,
-   "state_deq": 9.12,
-   "state_days": 39,
-   "k": 3
-  },
-  {
-   "conds": "chg in (1.63, +inf] & amp in (-inf, 1.849] & c_gap in (-1.566, 0.0]",
-   "sell": "sl8",
-   "best_deq": 3.459,
-   "state_deq": 8.68,
-   "state_days": 37,
-   "k": 3
-  },
-  {
-   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & dd250 in (-inf, -42.569] & vol_r in (1.199, +inf]",
-   "sell": "r10",
-   "best_deq": 2.043,
-   "state_deq": 7.81,
-   "state_days": 36,
-   "k": 4
-  },
-  {
-   "conds": "gap5 in (1.802, +inf] & amp in (-inf, 1.849] & c_gap in (-1.566, 0.0]",
-   "sell": "sl8",
-   "best_deq": 2.304,
-   "state_deq": 7.75,
-   "state_days": 42,
-   "k": 3
-  },
-  {
-   "conds": "price in (-inf, 6.03] & r20p in (-inf, -6.973] & r5p in (2.984, +inf] & v5_20 in (1.172, +inf]",
-   "sell": "r10",
-   "best_deq": 2.043,
-   "state_deq": 7.45,
-   "state_days": 20,
-   "k": 4
-  },
-  {
-   "conds": "price in (-inf, 6.03] & fmc in (-inf, 36.734] & dd250 in (-inf, -42.569] & c_zt in (1.0, +inf]",
-   "sell": "r10",
-   "best_deq": 2.081,
-   "state_deq": 7.3,
-   "state_days": 48,
-   "k": 4
-  }
- ],
- "3": [],
- "4": [
-  {
-   "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & amp in (-inf, 1.849]",
-   "sell": "sl5",
-   "best_deq": 6.8,
-   "state_deq": 10.44,
-   "state_days": 83,
-   "k": 3
-  },
-  {
-   "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]",
-   "sell": "sl5",
-   "best_deq": 6.25,
-   "state_deq": 10.33,
-   "state_days": 80,
-   "k": 3
-  },
-  {
-   "conds": "chg in (1.63, +inf] & vol_std in (3.378, +inf] & amp in (-inf, 1.849]",
-   "sell": "sl5",
-   "best_deq": 4.46,
-   "state_deq": 9.76,
-   "state_days": 82,
-   "k": 3
-  },
-  {
-   "conds": "price in (-inf, 6.03] & r20p in (-inf, -6.973] & gap5 in (-inf, -1.527] & chg in (1.24, +inf]",
-   "sell": "r10",
-   "best_deq": 2.367,
-   "state_deq": 9.21,
-   "state_days": 23,
-   "k": 4
-  },
-  {
-   "conds": "chg in (1.63, +inf] & v5_20 in (-inf, 0.722] & up_shadow in (2.143, +inf]",
-   "sell": "sl5",
-   "best_deq": 3.569,
-   "state_deq": 9.15,
-   "state_days": 57,
-   "k": 3
-  },
-  {
-   "conds": "chg in (1.63, +inf] & amp in (-inf, 1.849] & maxbd250 in (2.0, +inf]",
-   "sell": "sl5",
-   "best_deq": 5.238,
-   "state_deq": 9.07,
-   "state_days": 74,
-   "k": 3
-  }
- ],
- "5": [
   {
    "conds": "amp in (-inf, 1.849] & bd in (0.0, +inf] & zt120 in (3.0, +inf]",
    "sell": "sl5",
    "best_deq": 5.231,
-   "state_deq": 7.15,
-   "state_days": 102,
+   "state_deq": 14.87,
+   "state_days": 66,
    "k": 3
   },
   {
    "conds": "amp in (-inf, 1.849] & is_zt in (0.0, +inf] & zt120 in (3.0, +inf]",
    "sell": "sl5",
    "best_deq": 5.231,
-   "state_deq": 7.15,
-   "state_days": 102,
+   "state_deq": 14.87,
+   "state_days": 66,
    "k": 3
   },
   {
-   "conds": "chg in (1.63, +inf] & ma_bull in (0.0, +inf] & amp in (-inf, 1.849]",
+   "conds": "r60p in (13.32, +inf] & amp in (-inf, 1.849] & is_zt in (0.0, +inf]",
    "sell": "sl5",
-   "best_deq": 4.532,
-   "state_deq": 7.05,
-   "state_days": 134,
+   "best_deq": 4.815,
+   "state_deq": 14.41,
+   "state_days": 72,
    "k": 3
   },
   {
-   "conds": "chg in (1.63, +inf] & amp in (-inf, 1.849] & zt120 in (3.0, +inf]",
+   "conds": "r60p in (13.32, +inf] & amp in (-inf, 1.849] & bd in (0.0, +inf]",
    "sell": "sl5",
-   "best_deq": 5.328,
-   "state_deq": 6.82,
-   "state_days": 116,
+   "best_deq": 4.815,
+   "state_deq": 14.41,
+   "state_days": 72,
    "k": 3
   },
   {
-   "conds": "bd in (0.0, +inf] & p60 in (66.667, +inf] & zt120 in (2.0, +inf] & vol_r in (-inf, 0.724]",
-   "sell": "rbreak",
-   "best_deq": 4.269,
-   "state_deq": 6.72,
-   "state_days": 129,
+   "conds": "up_shadow in (2.143, +inf] & is_zt in (0.0, +inf] & zt120 in (3.0, +inf]",
+   "sell": "sl5",
+   "best_deq": 4.055,
+   "state_deq": 14.16,
+   "state_days": 84,
+   "k": 3
+  },
+  {
+   "conds": "up_shadow in (2.143, +inf] & bd in (0.0, +inf] & zt120 in (3.0, +inf]",
+   "sell": "sl5",
+   "best_deq": 4.055,
+   "state_deq": 14.16,
+   "state_days": 84,
+   "k": 3
+  }
+ ],
+ "2": [
+  {
+   "conds": "gap10 in (-inf, -3.105] & zt120 in (1.0, 3.0] & c_gap in (0.0, +inf]",
+   "sell": "r10",
+   "best_deq": 0.711,
+   "state_deq": 11.08,
+   "state_days": 22,
+   "k": 3
+  },
+  {
+   "conds": "dd250 in (-inf, -45.776] & gap5 in (-inf, -1.949] & price in (-inf, 5.37]",
+   "sell": "r10",
+   "best_deq": 1.151,
+   "state_deq": 10.81,
+   "state_days": 26,
+   "k": 3
+  },
+  {
+   "conds": "is_zt in (-inf, 0.0] & price in (-inf, 6.03] & gap5 in (-inf, -1.527] & p60 in (13.333, 41.667]",
+   "sell": "r10",
+   "best_deq": 0.652,
+   "state_deq": 10.46,
+   "state_days": 24,
    "k": 4
   },
   {
-   "conds": "is_zt in (0.0, +inf] & p60 in (66.667, +inf] & zt120 in (2.0, +inf] & vol_r in (-inf, 0.724]",
-   "sell": "rbreak",
-   "best_deq": 4.269,
-   "state_deq": 6.72,
-   "state_days": 129,
+   "conds": "bd in (-inf, 0.0] & price in (-inf, 6.03] & gap5 in (-inf, -1.527] & p60 in (13.333, 41.667]",
+   "sell": "r10",
+   "best_deq": 0.652,
+   "state_deq": 10.46,
+   "state_days": 24,
+   "k": 4
+  },
+  {
+   "conds": "price in (-inf, 6.03] & r5p in (-inf, -3.206] & dd250 in (-inf, -42.569] & vol_r in (1.199, +inf]",
+   "sell": "sl5",
+   "best_deq": 1.141,
+   "state_deq": 10.23,
+   "state_days": 25,
+   "k": 4
+  },
+  {
+   "conds": "gap10 in (-inf, -3.105] & vol_r in (0.977, 1.311] & price in (-inf, 5.37]",
+   "sell": "r10",
+   "best_deq": 0.85,
+   "state_deq": 9.8,
+   "state_days": 34,
+   "k": 3
+  },
+  {
+   "conds": "price in (-inf, 6.03] & up250 in (12.044, 26.108] & dd250 in (-inf, -42.569] & gap10 in (-inf, -2.449]",
+   "sell": "sl8",
+   "best_deq": 1.166,
+   "state_deq": 9.46,
+   "state_days": 22,
+   "k": 4
+  },
+  {
+   "conds": "price in (-inf, 6.03] & gap5 in (-inf, -1.527] & ma_bull in (-inf, 0.0] & vol_r in (1.199, +inf]",
+   "sell": "sl5",
+   "best_deq": 0.526,
+   "state_deq": 9.45,
+   "state_days": 30,
    "k": 4
   }
  ],
- "6": [
+ "3": [],
+ "4": [
+  {
+   "conds": "price in (-inf, 6.03] & r20p in (-inf, -6.973] & gap5 in (-inf, -1.527] & chg in (1.24, +inf]",
+   "sell": "r10",
+   "best_deq": 2.367,
+   "state_deq": 10.02,
+   "state_days": 21,
+   "k": 4
+  },
   {
    "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]",
    "sell": "sl5",
    "best_deq": 6.25,
-   "state_deq": 5.29,
-   "state_days": 189,
+   "state_deq": 9.9,
+   "state_days": 72,
    "k": 3
   },
   {
    "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & amp in (-inf, 1.849]",
    "sell": "sl5",
    "best_deq": 6.8,
-   "state_deq": 5.0,
-   "state_days": 183,
+   "state_deq": 9.89,
+   "state_days": 75,
    "k": 3
   },
   {
-   "conds": "chg in (1.63, +inf] & ups20 in (55.0, +inf] & amp in (-inf, 1.849]",
+   "conds": "chg in (1.63, +inf] & amp in (-inf, 1.849] & maxbd250 in (2.0, +inf]",
    "sell": "sl5",
-   "best_deq": 4.229,
-   "state_deq": 4.93,
-   "state_days": 139,
+   "best_deq": 5.238,
+   "state_deq": 9.88,
+   "state_days": 63,
+   "k": 3
+  },
+  {
+   "conds": "chg in (1.63, +inf] & v5_20 in (-inf, 0.722] & up_shadow in (2.143, +inf]",
+   "sell": "sl5",
+   "best_deq": 3.569,
+   "state_deq": 9.66,
+   "state_days": 55,
+   "k": 3
+  },
+  {
+   "conds": "chg in (1.63, +inf] & vol_std in (3.378, +inf] & amp in (-inf, 1.849]",
+   "sell": "sl5",
+   "best_deq": 4.46,
+   "state_deq": 9.04,
+   "state_days": 74,
+   "k": 3
+  },
+  {
+   "conds": "gap10 in (2.788, +inf] & vol_r in (-inf, 0.609] & maxbd250 in (2.0, +inf]",
+   "sell": "sl5",
+   "best_deq": 3.739,
+   "state_deq": 9.04,
+   "state_days": 82,
+   "k": 3
+  },
+  {
+   "conds": "up250 in (58.039, +inf] & up_shadow in (2.143, +inf] & bd in (0.0, +inf]",
+   "sell": "rbreak",
+   "best_deq": 4.049,
+   "state_deq": 8.87,
+   "state_days": 62,
+   "k": 3
+  }
+ ],
+ "5": [
+  {
+   "conds": "chg in (1.63, +inf] & ma_bull in (0.0, +inf] & amp in (-inf, 1.849]",
+   "sell": "sl5",
+   "best_deq": 4.532,
+   "state_deq": 8.29,
+   "state_days": 116,
+   "k": 3
+  },
+  {
+   "conds": "amp in (-inf, 1.849] & bd in (0.0, +inf] & zt120 in (3.0, +inf]",
+   "sell": "sl5",
+   "best_deq": 5.231,
+   "state_deq": 7.53,
+   "state_days": 92,
+   "k": 3
+  },
+  {
+   "conds": "amp in (-inf, 1.849] & is_zt in (0.0, +inf] & zt120 in (3.0, +inf]",
+   "sell": "sl5",
+   "best_deq": 5.231,
+   "state_deq": 7.53,
+   "state_days": 92,
+   "k": 3
+  },
+  {
+   "conds": "chg in (1.63, +inf] & amp in (-inf, 1.849] & zt120 in (3.0, +inf]",
+   "sell": "sl5",
+   "best_deq": 5.328,
+   "state_deq": 7.29,
+   "state_days": 105,
+   "k": 3
+  },
+  {
+   "conds": "up250 in (58.039, +inf] & amp in (-inf, 1.849] & bd in (0.0, +inf]",
+   "sell": "sl5",
+   "best_deq": 5.005,
+   "state_deq": 7.25,
+   "state_days": 96,
+   "k": 3
+  },
+  {
+   "conds": "up250 in (58.039, +inf] & amp in (-inf, 1.849] & is_zt in (0.0, +inf]",
+   "sell": "sl5",
+   "best_deq": 5.005,
+   "state_deq": 7.25,
+   "state_days": 96,
+   "k": 3
+  },
+  {
+   "conds": "chg in (1.63, +inf] & up250 in (58.039, +inf] & amp in (-inf, 1.849]",
+   "sell": "sl5",
+   "best_deq": 4.618,
+   "state_deq": 6.82,
+   "state_days": 127,
+   "k": 3
+  },
+  {
+   "conds": "p60 in (85.0, +inf] & amp in (-inf, 1.849] & is_zt in (0.0, +inf]",
+   "sell": "sl5",
+   "best_deq": 4.202,
+   "state_deq": 6.79,
+   "state_days": 125,
+   "k": 3
+  }
+ ],
+ "6": [
+  {
+   "conds": "gap20 in (4.152, +inf] & v5_20 in (-inf, 0.722] & amp in (-inf, 1.849]",
+   "sell": "sl5",
+   "best_deq": 6.097,
+   "state_deq": 4.89,
+   "state_days": 96,
    "k": 3
   },
   {
    "conds": "gap10 in (2.788, +inf] & v5_20 in (-inf, 0.722] & amp in (-inf, 1.849]",
    "sell": "sl5",
    "best_deq": 6.213,
-   "state_deq": 4.83,
-   "state_days": 91,
+   "state_deq": 4.86,
+   "state_days": 84,
    "k": 3
   },
   {
-   "conds": "gap20 in (4.152, +inf] & v5_20 in (-inf, 0.722] & amp in (-inf, 1.849]",
+   "conds": "gap5 in (1.802, +inf] & v5_20 in (-inf, 0.722] & amp in (-inf, 1.849]",
    "sell": "sl5",
-   "best_deq": 6.097,
-   "state_deq": 4.81,
-   "state_days": 104,
+   "best_deq": 5.115,
+   "state_deq": 4.16,
+   "state_days": 107,
    "k": 3
   },
   {
-   "conds": "bd in (0.0, +inf] & up250 in (40.0, +inf] & zt120 in (2.0, +inf] & vol_r in (-inf, 0.724]",
-   "sell": "rbreak",
-   "best_deq": 4.344,
-   "state_deq": 4.65,
-   "state_days": 164,
+   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & r5p in (-3.206, -0.148] & dd250 in (-inf, -42.569]",
+   "sell": "r10",
+   "best_deq": 0.902,
+   "state_deq": 4.11,
+   "state_days": 145,
    "k": 4
+  },
+  {
+   "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & up_shadow in (2.143, +inf]",
+   "sell": "sl5",
+   "best_deq": 6.25,
+   "state_deq": 4.05,
+   "state_days": 166,
+   "k": 3
+  },
+  {
+   "conds": "vol_std in (3.378, +inf] & price in (-inf, 5.37] & maxbd250 in (-inf, 0.0]",
+   "sell": "r10",
+   "best_deq": 2.417,
+   "state_deq": 3.92,
+   "state_days": 142,
+   "k": 3
+  },
+  {
+   "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & amp in (-inf, 1.849]",
+   "sell": "sl5",
+   "best_deq": 6.8,
+   "state_deq": 3.84,
+   "state_days": 164,
+   "k": 3
+  },
+  {
+   "conds": "chg in (1.63, +inf] & gap5 in (-inf, -1.949] & price in (-inf, 5.37]",
+   "sell": "sl8",
+   "best_deq": 1.306,
+   "state_deq": 3.7,
+   "state_days": 56,
+   "k": 3
   }
  ],
  "7": [
   {
-   "conds": "price in (-inf, 6.03] & fmc in (-inf, 36.734] & r20p in (-inf, -6.973] & c_zt in (1.0, +inf]",
+   "conds": "r5p in (1.771, +inf] & p60 in (-inf, 21.667] & fmc in (111.388, +inf] & zt120 in (2.0, +inf]",
    "sell": "r10",
-   "best_deq": 1.953,
-   "state_deq": 4.6,
-   "state_days": 25,
+   "best_deq": 1.127,
+   "state_deq": 9.76,
+   "state_days": 29,
    "k": 4
   },
   {
-   "conds": "price in (-inf, 6.03] & r20p in (-inf, -6.973] & vol_r in (1.199, +inf] & c_zt in (1.0, +inf]",
+   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & gap5 in (-inf, -1.527] & v5_20 in (0.762, 0.94]",
    "sell": "r10",
-   "best_deq": 2.038,
-   "state_deq": 3.52,
-   "state_days": 24,
+   "best_deq": 0.667,
+   "state_deq": 9.12,
+   "state_days": 38,
    "k": 4
   },
   {
-   "conds": "p60 in (21.667, 66.667] & gap20 in (1.852, +inf] & maxbd250 in (2.0, +inf] & zt120 in (-inf, 0.0]",
-   "sell": "sl8",
-   "best_deq": 2.238,
-   "state_deq": 3.44,
-   "state_days": 25,
-   "k": 4
-  },
-  {
-   "conds": "price in (-inf, 6.03] & gap5 in (-inf, -1.527] & gap60 in (-inf, -7.163] & chg in (1.24, +inf]",
+   "conds": "gap60 in (-inf, -5.018] & gap10 in (1.251, +inf] & fmc in (111.388, +inf] & zt120 in (2.0, +inf]",
    "sell": "r10",
-   "best_deq": 2.697,
-   "state_deq": 3.42,
-   "state_days": 16,
+   "best_deq": 1.184,
+   "state_deq": 9.04,
+   "state_days": 37,
    "k": 4
   },
   {
-   "conds": "gap20 in (1.852, +inf] & maxbd250 in (2.0, +inf] & zt120 in (-inf, 0.0] & dd250 in (-inf, -37.919]",
-   "sell": "sl8",
-   "best_deq": 1.875,
-   "state_deq": 2.95,
-   "state_days": 45,
-   "k": 4
-  },
-  {
-   "conds": "up250 in (40.0, +inf] & maxbd250 in (2.0, +inf] & zt120 in (-inf, 0.0] & dd250 in (-inf, -37.919]",
+   "conds": "price in (-inf, 6.03] & fmc in (-inf, 36.734] & vol_r in (0.871, 1.199] & chg in (-inf, -1.33]",
    "sell": "r10",
-   "best_deq": 1.855,
-   "state_deq": 2.78,
-   "state_days": 49,
+   "best_deq": 0.768,
+   "state_deq": 8.96,
+   "state_days": 35,
+   "k": 4
+  },
+  {
+   "conds": "price in (-inf, 6.03] & fmc in (-inf, 36.734] & gap5 in (-inf, -1.527] & gap60 in (-1.428, 5.009]",
+   "sell": "sl5",
+   "best_deq": 0.52,
+   "state_deq": 8.84,
+   "state_days": 31,
+   "k": 4
+  },
+  {
+   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & fmc in (-inf, 36.734] & gap10 in (-inf, -2.449]",
+   "sell": "r10",
+   "best_deq": 0.494,
+   "state_deq": 8.73,
+   "state_days": 31,
+   "k": 4
+  },
+  {
+   "conds": "price in (-inf, 6.03] & gap5 in (-inf, -1.527] & zt120 in (1.0, 3.0] & vol_r in (0.871, 1.199]",
+   "sell": "r10",
+   "best_deq": 1.07,
+   "state_deq": 8.13,
+   "state_days": 34,
+   "k": 4
+  },
+  {
+   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & v5_20 in (0.762, 0.94] & chg in (-inf, -1.33]",
+   "sell": "r10",
+   "best_deq": 0.91,
+   "state_deq": 7.95,
+   "state_days": 36,
    "k": 4
   }
  ],
  "8": [
   {
-   "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & c_chg in (-inf, 0.0]",
-   "sell": "sl5",
-   "best_deq": 2.066,
-   "state_deq": 3.47,
-   "state_days": 59,
-   "k": 3
-  },
-  {
-   "conds": "gap5 in (1.802, +inf] & amp in (-inf, 1.849] & c_chg in (-inf, 0.0]",
+   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & gap60 in (5.009, +inf] & c_zt in (1.0, +inf]",
    "sell": "sl8",
-   "best_deq": 2.055,
-   "state_deq": 3.35,
-   "state_days": 58,
-   "k": 3
+   "best_deq": 0.921,
+   "state_deq": 6.42,
+   "state_days": 34,
+   "k": 4
   },
   {
-   "conds": "chg in (1.63, +inf] & vol_r in (-inf, 0.609] & c_first in (-inf, 0.0]",
-   "sell": "sl5",
-   "best_deq": 2.214,
-   "state_deq": 3.17,
-   "state_days": 67,
-   "k": 3
+   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & p60 in (78.333, +inf] & c_zt in (1.0, +inf]",
+   "sell": "sl8",
+   "best_deq": 1.081,
+   "state_deq": 4.82,
+   "state_days": 36,
+   "k": 4
   },
   {
-   "conds": "gap5 in (1.802, +inf] & amp in (-inf, 1.849] & c_first in (-inf, 0.0]",
+   "conds": "p60 in (-inf, 21.667] & gap20 in (-2.552, 1.852] & gap10 in (-inf, -1.589] & maxbd250 in (2.0, +inf]",
    "sell": "sl5",
-   "best_deq": 2.269,
-   "state_deq": 3.06,
-   "state_days": 66,
-   "k": 3
+   "best_deq": 0.447,
+   "state_deq": 4.56,
+   "state_days": 39,
+   "k": 4
   },
   {
-   "conds": "chg in (1.63, +inf] & up_shadow in (2.143, +inf] & maxbd250 in (2.0, +inf]",
-   "sell": "sl5",
-   "best_deq": 2.166,
-   "state_deq": 2.51,
-   "state_days": 65,
-   "k": 3
+   "conds": "gap60 in (-inf, -5.018] & gap20 in (1.852, +inf] & maxbd250 in (1.0, 2.0] & dd250 in (-inf, -37.919]",
+   "sell": "r10",
+   "best_deq": 0.93,
+   "state_deq": 4.52,
+   "state_days": 33,
+   "k": 4
   },
   {
-   "conds": "r60p in (13.32, +inf] & up250 in (58.039, +inf] & amp in (-inf, 1.849]",
+   "conds": "price in (-inf, 6.03] & r5p in (2.984, +inf] & gap5 in (-0.092, 1.375] & chg in (-1.33, 0.0]",
+   "sell": "r10",
+   "best_deq": 1.014,
+   "state_deq": 4.46,
+   "state_days": 48,
+   "k": 4
+  },
+  {
+   "conds": "price in (-inf, 7.19] & gap5 in (-inf, -0.981] & up250 in (40.0, +inf] & zt120 in (-inf, 0.0]",
+   "sell": "r10",
+   "best_deq": 1.06,
+   "state_deq": 4.05,
+   "state_days": 52,
+   "k": 4
+  },
+  {
+   "conds": "price in (17.22, +inf] & fmc in (155.443, +inf] & zt120 in (3.0, +inf] & v5_20 in (1.172, +inf]",
+   "sell": "r10",
+   "best_deq": 1.513,
+   "state_deq": 3.93,
+   "state_days": 54,
+   "k": 4
+  },
+  {
+   "conds": "r20p in (3.538, +inf] & ma_bull in (0.0, +inf] & maxbd250 in (2.0, +inf] & v5_20 in (-inf, 0.822]",
    "sell": "sl5",
-   "best_deq": 2.151,
-   "state_deq": 2.22,
-   "state_days": 67,
-   "k": 3
+   "best_deq": 1.21,
+   "state_deq": 3.88,
+   "state_days": 45,
+   "k": 4
   }
  ],
  "9": [
   {
-   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & dd250 in (-inf, -42.569] & p60 in (-inf, 13.333]",
+   "conds": "p60 in (8.333, 28.333] & vol_std in (3.378, +inf] & c_zt in (1.0, +inf]",
    "sell": "r10",
-   "best_deq": 2.161,
-   "state_deq": 5.75,
-   "state_days": 61,
-   "k": 4
-  },
-  {
-   "conds": "price in (-inf, 6.03] & up250 in (26.108, 49.896] & dd250 in (-inf, -42.569] & gap60 in (-inf, -7.163]",
-   "sell": "r10",
-   "best_deq": 2.02,
-   "state_deq": 5.2,
-   "state_days": 63,
-   "k": 4
-  },
-  {
-   "conds": "r5p in (-inf, -2.044] & fmc in (111.388, +inf] & maxbd250 in (2.0, +inf] & vol_r in (1.063, +inf]",
-   "sell": "r10",
-   "best_deq": 1.946,
-   "state_deq": 4.59,
-   "state_days": 79,
-   "k": 4
-  },
-  {
-   "conds": "price in (-inf, 6.03] & fmc in (65.722, 155.443] & zt120 in (3.0, +inf] & dd250 in (-inf, -42.569]",
-   "sell": "r10",
-   "best_deq": 2.085,
-   "state_deq": 4.33,
-   "state_days": 66,
-   "k": 4
-  },
-  {
-   "conds": "r20p in (-inf, -8.625] & price in (-inf, 5.37] & c_hot in (1.0, +inf]",
-   "sell": "r10",
-   "best_deq": 1.932,
-   "state_deq": 4.02,
-   "state_days": 61,
+   "best_deq": 1.152,
+   "state_deq": 10.68,
+   "state_days": 37,
    "k": 3
   },
   {
-   "conds": "price in (-inf, 6.03] & fmc in (-inf, 36.734] & r20p in (-inf, -6.973] & vol_r in (1.199, +inf]",
+   "conds": "price in (6.03, 10.09] & fmc in (155.443, +inf] & r5p in (-inf, -3.206] & vol_r in (1.199, +inf]",
    "sell": "r10",
-   "best_deq": 1.987,
-   "state_deq": 4.01,
-   "state_days": 79,
+   "best_deq": 0.699,
+   "state_deq": 9.79,
+   "state_days": 71,
+   "k": 4
+  },
+  {
+   "conds": "price in (6.03, 10.09] & fmc in (155.443, +inf] & vol_r in (1.199, +inf] & gap10 in (-inf, -2.449]",
+   "sell": "r10",
+   "best_deq": 0.852,
+   "state_deq": 8.88,
+   "state_days": 76,
+   "k": 4
+  },
+  {
+   "conds": "p60 in (8.333, 28.333] & vol_r in (1.311, +inf] & c_zt in (1.0, +inf]",
+   "sell": "r10",
+   "best_deq": 0.812,
+   "state_deq": 8.73,
+   "state_days": 31,
+   "k": 3
+  },
+  {
+   "conds": "r20p in (-inf, -4.66] & dd250 in (-inf, -37.919] & c_gap in (0.0, +inf] & v5_20 in (1.079, +inf]",
+   "sell": "sl5",
+   "best_deq": 0.803,
+   "state_deq": 8.64,
+   "state_days": 39,
+   "k": 4
+  },
+  {
+   "conds": "r60p in (-14.971, -6.005] & up250 in (9.744, 19.904] & c_zt in (1.0, +inf]",
+   "sell": "r10",
+   "best_deq": 0.713,
+   "state_deq": 8.56,
+   "state_days": 44,
+   "k": 3
+  },
+  {
+   "conds": "price in (6.03, 10.09] & up250 in (26.108, 49.896] & vol_r in (1.199, +inf] & p60 in (-inf, 13.333]",
+   "sell": "r10",
+   "best_deq": 0.849,
+   "state_deq": 8.43,
+   "state_days": 43,
+   "k": 4
+  },
+  {
+   "conds": "p60 in (-inf, 21.667] & dd250 in (-inf, -37.919] & c_gap in (0.0, +inf] & v5_20 in (1.079, +inf]",
+   "sell": "r10",
+   "best_deq": 0.775,
+   "state_deq": 8.32,
+   "state_days": 39,
    "k": 4
   }
  ]
