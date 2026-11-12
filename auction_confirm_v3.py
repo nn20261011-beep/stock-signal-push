@@ -230,15 +230,15 @@ def main():
     body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
     body.append('<tr style="background:#f9fafb"><th align=left>代码</th><th align=left>名称</th>'
                 '<th align=right>开盘价</th><th align=right>竞价涨幅</th><th align=left>动作</th>'
-                '<th align=right>战法年化</th></tr>')
+                '<th align=right>该状态日等权</th></tr>')
     for r in sorted(rows, key=lambda x: (x['act'] != '可按开盘价买', -(x.get('gap') or 0))):
         color = '#c00' if r['act'] == '可按开盘价买' else '#888'
         body.append('<tr><td><b>%s</b></td><td>%s</td><td align=right>%s</td>'
                     '<td align=right>%s</td><td style="color:%s"><b>%s</b></td>'
-                    '<td align=right>+%.1f%%</td></tr>' % (
+                    '<td align=right>%+.2f%%</td></tr>' % (
                         r['code'], r['name'], r['open'] if r['open'] else '—',
                         ('%+.2f%%' % r['gap']) if r['gap'] is not None else '—',
-                        color, r['act'], r['ann']))
+                        color, r['act'], r.get('state_deq', r.get('ann', 0))))
     body.append('</table>')
     if fresh:
         body.append('<h3 style="font-size:15px;margin-top:18px">竞价新挑（昨日涨停池 · 按身位）</h3>')
