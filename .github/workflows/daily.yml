@@ -2,14 +2,23 @@ name: 每日选股信号推送
 
 on:
   schedule:
-    # GitHub 免费版 schedule 实测延迟 56~60 分钟，故设 3 个错峰触发点。
+    # 晚间主清单（次日开盘买）：3 个错峰点，抵抗 GitHub 排队延迟 56~60 分钟
     # 北京 18:00 / 20:00 / 22:00 = UTC 10:00 / 12:00 / 14:00
-    # 脚本内部按 base_day 去重，一天最多发一封。
     - cron: '0 10 * * 1-5'
     - cron: '0 12 * * 1-5'
     - cron: '0 14 * * 1-5'
+    # 早间竞价确认：3 个错峰点，各自自旋等到 9:25:40
+    # 北京 07:00 / 08:00 / 09:00 = UTC 23:00(前一日) / 00:00 / 01:00
+    # 用 GitHub 文件锁保证只有一个 run 真正发信；超过 9:28 自动放弃
+    - cron: '0 23 * * 0-4'
+    - cron: '0 0 * * 1-5'
+    - cron: '0 1 * * 1-5'
   workflow_dispatch:
     inputs:
+      job:
+        description: 'evening=晚间清单 / auction=竞价确认'
+        required: false
+        default: 'evening'
       dry:
         description: '只生成不发信'
         required: false
@@ -22,12 +31,14 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: daily-signal-v3
-  cancel-in-progress: false
+# 不加 workflow 级 concurrency：早间 3 个自旋 run 若被排队会错过 9:25 窗口。
+# 去重改由脚本内部完成（晚间 send.log，早间 GitHub 文件锁）。
 
 jobs:
-  daily:
+  evening:
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.job == 'evening' ||
+      github.event_name == 'schedule' && contains(fromJSON('["0 10 * * 1-5", "0 12 * * 1-5", "0 14 * * 1-5"]'), github.event.schedule)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -37,10 +48,8 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
       - run: pip install -q numpy==2.1.3 pandas==2.2.3
-
       - name: 抓当日行情增量
         run: python live_fetch.py
-
       - name: 生成并发送选股信号（战法池 v3）
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
@@ -48,17 +57,41 @@ jobs:
           MAIL_TO: ${{ secrets.MAIL_TO }}
         run: |
           ARGS=""
-          if [ "${{ github.event.inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
-          if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          if [ "${{ inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
+          if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
           python push_v3.py $ARGS
-
-      - name: 归档日志与历史缓存
+      - name: 归档
         run: |
           git config user.name "signal-bot"
           git config user.email "bot@users.noreply.github.com"
           git add -f _push_logs _hist.pkl.gz 2>/dev/null || true
           if git diff --cached --quiet; then echo "无新增"; else
-            git commit -m "v3 logs $(date -u +%F)"
+            git commit -m "v3 evening logs $(date -u +%F)"
             git pull --rebase origin main || true
             git push origin main || true
           fi
+
+  auction:
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.job == 'auction' ||
+      github.event_name == 'schedule' && contains(fromJSON('["0 23 * * 0-4", "0 0 * * 1-5", "0 1 * * 1-5"]'), github.event.schedule)
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: 竞价执行确认（自旋到 9:25:40）
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          GH_TOKEN: ${{ github.token }}
+          TZ: Asia/Shanghai
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
+          if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          python auction_confirm_v3.py $ARGS
