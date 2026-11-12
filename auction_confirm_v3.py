@@ -113,8 +113,7 @@ def main():
             return
     sigs = prev.get('signals') or []
     if not sigs:
-        print('昨晚无信号，今日不发竞价确认', flush=True)
-        return
+        print('昨晚无信号，仅做竞价新挑', flush=True)
 
     # 去重：今天已发过则跳过（本地日志）
     sp = os.path.join(LOG, 'send.log')
@@ -147,6 +146,59 @@ def main():
                 code = getattr(e, 'code', None)
                 print('未抢到锁(HTTP %s)，说明其它触发点已发，跳过' % code, flush=True)
                 return
+
+    # ---- 竞价后按身位新挑当日票（只在昨日涨停池里选，不接低开） ----
+    fresh = []
+    try:
+        import gzip, pickle
+        hp = os.path.join(BASE, '_hist.pkl.gz')
+        if os.path.exists(hp):
+            with gzip.open(hp, 'rb') as f:
+                K = pickle.load(f)
+            dlist = sorted({d for v in K.values() for d in v})
+            if len(dlist) >= 2:
+                t_prev = dlist[-1]      # 若在盘前跑，最新日=昨日
+                t2 = dlist[-2]
+                pool = {}
+                for c, v in K.items():
+                    if t_prev not in v or t2 not in v:
+                        continue
+                    pc = v[t2][1]
+                    if pc <= 0:
+                        continue
+                    x = (v[t_prev][1] / pc - 1) * 100
+                    if 9.8 <= x <= 10.6:
+                        run = 1
+                        j = dlist.index(t_prev) - 1
+                        while j >= 1:
+                            ds_ = dlist[j]
+                            if ds_ in v and dlist[j - 1] in v and v[dlist[j - 1]][1] > 0:
+                                if 9.8 <= (v[ds_][1] / v[dlist[j - 1]][1] - 1) * 100 <= 10.6:
+                                    run += 1
+                                    j -= 1
+                                    continue
+                            break
+                        pool[c] = run
+                if pool:
+                    qq = get_quotes(list(pool.keys()))
+                    for c, bd in pool.items():
+                        v = qq.get(c)
+                        if not v or v['prev'] <= 0 or v['open'] <= 0:
+                            continue
+                        gap = (v['open'] / v['prev'] - 1) * 100
+                        limit = round(v['prev'] * 1.10, 2)
+                        oneword = v['open'] >= limit - 0.011      # 一字板买不到
+                        if oneword or gap <= 0 or gap > 7:
+                            continue                              # 不接低开、不追一字
+                        fresh.append(dict(code=c, name=v['name'], bd=bd, open=v['open'],
+                                          gap=round(gap, 2),
+                                          score=bd * 10 + min(gap, 7)))
+                    fresh.sort(key=lambda x: -x['score'])
+                    fresh = fresh[:5]
+                    print('竞价新挑 %d 只（昨日涨停池 %d 只，剔除低开/一字/高开>7%%）' % (
+                        len(fresh), len(pool)), flush=True)
+    except Exception as e:
+        print('竞价新挑失败（不影响主清单确认）：%s' % e, flush=True)
 
     codes = [s['code'] for s in sigs]
     q = get_quotes(codes)
@@ -187,9 +239,26 @@ def main():
                         r['code'], r['name'], r['open'] if r['open'] else '—',
                         ('%+.2f%%' % r['gap']) if r['gap'] is not None else '—',
                         color, r['act'], r['ann']))
-    body.append('</table></div>')
+    body.append('</table>')
+    if fresh:
+        body.append('<h3 style="font-size:15px;margin-top:18px">竞价新挑（昨日涨停池 · 按身位）</h3>')
+        body.append('<p style="font-size:12px;color:#6b7280">只在昨日涨停股里选；'
+                    '<b>剔除低开、一字、高开&gt;7%</b>。按连板高度优先，最多 5 只。</p>')
+        body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
+        body.append('<tr style="background:#f9fafb"><th align=left>代码</th><th align=left>名称</th>'
+                    '<th align=right>昨日连板</th><th align=right>竞价开盘</th><th align=right>竞价涨幅</th>'
+                    '<th align=left>身位</th></tr>')
+        for r in fresh:
+            pos_ = '龙头' if r['bd'] >= 3 else ('前排' if r['bd'] == 2 else '首板')
+            body.append('<tr><td><b>%s</b></td><td>%s</td><td align=right>%d板</td>'
+                        '<td align=right>%.2f</td><td align=right style="color:#c00"><b>%+.2f%%</b></td>'
+                        '<td>%s</td></tr>' % (r['code'], r['name'], r['bd'], r['open'], r['gap'], pos_))
+        body.append('</table>')
+        body.append('<p style="font-size:12px;color:#6b7280">卖出：断板次日走；跌 5% 止损。</p>')
+    body.append('</div>')
     html = ''.join(body)
-    subj = '【竞价确认 v3】%s 可买 %d 只 · 9:30 前下单' % (now.strftime('%m-%d'), len(buy))
+    subj = '【竞价确认 v3】%s 清单%d只可买 + 新挑%d只 · 9:30 前下单' % (
+        now.strftime('%m-%d'), len(buy), len(fresh))
 
     open(os.path.join(LOG, 'confirm_%s_v3.html' % now.strftime('%Y%m%d')), 'w', encoding='utf-8').write(html)
     if dry:
