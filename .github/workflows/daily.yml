@@ -2,22 +2,20 @@ name: 每日选股信号推送
 
 on:
   schedule:
-    # 北京时间 20:00 = UTC 12:00 → 晚间：13 套隔夜策略 + 一进二候选池
+    # GitHub 免费版 schedule 实测延迟 56~60 分钟，故设 3 个错峰触发点。
+    # 北京 18:00 / 20:00 / 22:00 = UTC 10:00 / 12:00 / 14:00
+    # 脚本内部按 base_day 去重，一天最多发一封。
+    - cron: '0 10 * * 1-5'
     - cron: '0 12 * * 1-5'
-    # 北京时间 09:22 = UTC 01:22 → 提前唤醒，脚本自旋等到 09:25:35 竞价撮合后再读数
-    - cron: '22 1 * * 1-5'
+    - cron: '0 14 * * 1-5'
   workflow_dispatch:
     inputs:
-      mode:
-        description: 'lib=13套隔夜策略 / scan=一进二候选池 / confirm=竞价确认'
-        required: false
-        default: 'lib'
       dry:
         description: '只生成不发信'
         required: false
         default: 'false'
       force:
-        description: '强制发送（忽略当天已发）'
+        description: '跳过时间闸门（仅调试）'
         required: false
         default: 'false'
 
@@ -25,12 +23,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: daily-signal
+  group: daily-signal-v3
   cancel-in-progress: false
 
 jobs:
-  evening:
-    if: github.event.schedule == '0 12 * * 1-5' || github.event.inputs.mode == 'lib' || github.event.inputs.mode == 'scan'
+  daily:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -41,77 +38,27 @@ jobs:
           cache: 'pip'
       - run: pip install -q numpy==2.1.3 pandas==2.2.3
 
-      - name: 读历史缓存 + 抓当日增量
+      - name: 抓当日行情增量
         run: python live_fetch.py
 
-      - name: 13 套隔夜策略（次日开盘买）
-        if: github.event.inputs.mode != 'scan'
+      - name: 生成并发送选股信号（战法池 v3）
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
         run: |
-          if [ "${{ github.event.inputs.dry }}" = "true" ]; then
-            python push_lib.py --dry
-          else
-            python push_lib.py
-          fi
+          ARGS=""
+          if [ "${{ github.event.inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          python push_v3.py $ARGS
 
-      - name: 一进二候选池（等次日竞价低开确认）
-        if: github.event.inputs.mode != 'lib'
-        env:
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          MAIL_TO: ${{ secrets.MAIL_TO }}
-        run: |
-          if [ "${{ github.event.inputs.dry }}" = "true" ]; then
-            python auction_push.py scan --dry
-          else
-            python auction_push.py scan
-          fi
-
-      - name: 归档日志
+      - name: 归档日志与历史缓存
         run: |
           git config user.name "signal-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add -f _push_logs _auction_logs _hist.pkl.gz 2>/dev/null || true
+          git add -f _push_logs _hist.pkl.gz 2>/dev/null || true
           if git diff --cached --quiet; then echo "无新增"; else
-            git commit -m "evening logs $(date -u +%F)"
-            git pull --rebase origin main || true
-            git push origin main || true
-          fi
-
-  auction:
-    if: github.event.schedule == '22 1 * * 1-5' || github.event.inputs.mode == 'confirm'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      - run: pip install -q numpy==2.1.3 pandas==2.2.3
-
-      - name: 竞价确认（自旋等到 09:25:35）
-        env:
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          MAIL_TO: ${{ secrets.MAIL_TO }}
-        run: |
-          if [ "${{ github.event.inputs.dry }}" = "true" ]; then
-            python auction_push.py confirm --wait --dry
-          else
-            python auction_push.py confirm --wait
-          fi
-
-      - name: 归档日志
-        run: |
-          git config user.name "signal-bot"
-          git config user.email "bot@users.noreply.github.com"
-          git add -f _auction_logs 2>/dev/null || true
-          if git diff --cached --quiet; then echo "无新增"; else
-            git commit -m "auction logs $(date -u +%F)"
+            git commit -m "v3 logs $(date -u +%F)"
             git pull --rebase origin main || true
             git push origin main || true
           fi
