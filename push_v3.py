@@ -26,7 +26,7 @@ os.makedirs(LOG, exist_ok=True)
 SMTP_USER = os.environ.get('SMTP_USER', 'h1533165068@qq.com')
 SMTP_PASS = os.environ.get('SMTP_PASS', 'xfboalpjikugjfgg')
 MAIL_TO = os.environ.get('MAIL_TO', 'h1533165068@qq.com')
-VERSION = 'v3.0 / 战法池2026-11-12 / 74.99万战法穷举 / 30条稳健战法'
+VERSION = 'v3.1 / 战法池2026-11-12 / 101.0万战法穷举 / 52条战法(含22条题材战法)'
 
 ZT_LO, ZT_HI = 9.8, 10.6
 FEAT_ORDER = ['chg', 'r5p', 'r20p', 'r60p', 'p60', 'dd250', 'gap5', 'gap10', 'gap20',
@@ -204,8 +204,22 @@ def main():
     body.append('<h2 style="font-size:18px">%s 收盘信号 · 次日开盘买入</h2>' % today)
     body.append('<p style="font-size:12px;color:#6b7280">策略版本：%s<br>生成时间：%s（北京时间）</p>' % (VERSION, tstr))
     if ranked:
+        sell_desc = {'sl5': '跌 5% 立即止损 / 最长持 10 日',
+                     'sl8': '跌 8% 立即止损 / 最长持 10 日',
+                     'rbreak': '断板次日走',
+                     'r10': '持满 10 日收盘卖',
+                     'r5': '持满 5 日收盘卖',
+                     'r3': '持满 3 日收盘卖',
+                     'tp8': '涨 8% 止盈 / 最长持 10 日',
+                     'tp5': '涨 5% 止盈 / 最长持 10 日',
+                     'ma5_n': '跌破 MA5 次日走',
+                     'ma10_n': '跌破 MA10 次日走'}
+        used = sorted({h['s']['sell'] for h in ranked})
+        sell_txt = '；'.join('%s → %s' % (k, sell_desc.get(k, k)) for k in used)
         body.append('<p style="font-size:13px">共 <b>%d</b> 只。买入口径：<b>T 日收盘出信号 → 次日开盘价买入</b>；'
-                    '已剔除 ST/退市/除权。<b>卖出：买入后跌 5%% 立即止损，最长持有 10 个交易日</b>。</p>' % len(ranked))
+                    '已剔除 ST/退市/除权。</p>' % len(ranked))
+        body.append('<p style="font-size:13px;background:#fff7ed;padding:8px;border-radius:6px">'
+                    '<b>卖出按各自战法执行</b>：%s</p>' % sell_txt)
         body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
         body.append('<tr style="background:#f9fafb"><th align=left>代码</th><th align=left>名称</th>'
                     '<th align=right>今收</th><th align=left>命中战法</th><th align=right>年化</th>'
