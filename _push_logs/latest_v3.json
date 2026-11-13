@@ -1,20 +1,20 @@
 {
  "version": "v3.1 / 战法池2026-11-12 / 101.0万战法穷举 / 52条战法(含22条题材战法)",
- "time": "2026-11-12 23:13:54",
- "base_day": "2026-11-12",
+ "time": "2026-11-13 18:55:28",
+ "base_day": "2026-11-13",
  "hits": 2,
  "signals": [
   {
-   "code": "600893",
-   "name": "航发动力",
+   "code": "002352",
+   "name": "顺丰控股",
    "state_deq": 8.85,
    "sell": "sl8",
    "cluster": 0,
    "conds": "gap5 in (-inf, -0.981] & zt120 in (-inf, 0.0] & vol_r in (1.063, +inf] & chg in (0.73, +inf]"
   },
   {
-   "code": "603939",
-   "name": "益丰药房",
+   "code": "600873",
+   "name": "梅花生物",
    "state_deq": 8.85,
    "sell": "sl8",
    "cluster": 0,
