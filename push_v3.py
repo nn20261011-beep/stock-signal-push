@@ -3,7 +3,7 @@
 push_v3.py —— 每日选股推送（战法池 v3，替换旧 13 套策略 / 低开一进二）
 
 数据源：_hist.pkl.gz（全市场日线，live_fetch.py 每天增量更新）
-战法源：strategies_v3.json —— 昨晚 74.99 万战法穷举后，各市况都稳、回撤<15% 的 30 条
+战法源：strategies_by_state.json —— 101.0 万战法穷举后按市况分组选出的 66 条调度战法
 买点：T 日收盘出信号 → T+1 开盘价买入（严格 T+1，买入当天不可卖）
 卖点：每条战法自带，当前 30 条全为「止损 5% + 持有上限 10 日」
 
@@ -26,7 +26,7 @@ os.makedirs(LOG, exist_ok=True)
 SMTP_USER = os.environ.get('SMTP_USER', 'h1533165068@qq.com')
 SMTP_PASS = os.environ.get('SMTP_PASS', 'xfboalpjikugjfgg')
 MAIL_TO = os.environ.get('MAIL_TO', 'h1533165068@qq.com')
-VERSION = 'v3.1 / 战法池2026-11-12 / 101.0万战法穷举 / 52条战法(含22条题材战法)'
+VERSION = 'v3.3 / 战法池2026-11-12 / 101.0万战法穷举 / 66条调度战法(全量18781条筛出)'
 
 ZT_LO, ZT_HI = 9.8, 10.6
 FEAT_ORDER = ['chg', 'r5p', 'r20p', 'r60p', 'p60', 'dd250', 'gap5', 'gap10', 'gap20',
@@ -200,6 +200,17 @@ def main():
     except Exception as e:
         print('判天失败，本轮全量战法兜底：%s' % e, flush=True)
 
+    # 环境暴露：数据已证明「按环境择时」无预测力，因此不空仓，
+    # 只在环境明显转弱时减少当日新开仓数量（降低暴露，不预测）
+    max_picks = 8
+    if ms is not None:
+        try:
+            if float(ms.get('earn') or 0) < -1.0 or float(ms.get('dt_n') or 0) >= 30:
+                max_picks = 4
+        except Exception:
+            pass
+    print('今日目标开仓上限 %d 只（单票 10%%）' % max_picks, flush=True)
+
     hits = []
     for si, s in enumerate(S):
         for c, f in feats.items():
@@ -220,7 +231,7 @@ def main():
             continue
         per_sid[sid] = per_sid.get(sid, 0) + 1
         ranked.append(h)
-        if len(ranked) >= 10:
+        if len(ranked) >= max_picks:
             break
     print('命中 %d 条 / 去重后 %d 只 / 来自 %d 套战法' % (
         len(hits), len(ranked), len(per_sid)), flush=True)
@@ -252,7 +263,9 @@ def main():
         used = sorted({h['s']['sell'] for h in ranked})
         sell_txt = '；'.join('%s → %s' % (k, sell_desc.get(k, k)) for k in used)
         body.append('<p style="font-size:13px">共 <b>%d</b> 只。买入口径：<b>T 日收盘出信号 → 次日开盘价买入</b>；'
-                    '已剔除 ST/退市/除权。</p>' % len(ranked))
+                    '已剔除 ST/退市/除权。<br><b>仓位：单票 10%%，最多同时 8 只</b>%s。</p>' % (
+                        len(ranked),
+                        '；当前环境偏弱，今日开仓上限下调至 4 只' if max_picks == 4 else ''))
         body.append('<p style="font-size:13px;background:#fff7ed;padding:8px;border-radius:6px">'
                     '<b>卖出按各自战法执行</b>：%s</p>' % sell_txt)
         body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
@@ -273,13 +286,13 @@ def main():
                             v, SELL_TXT.get(s['sell'], s['sell'])))
         body.append('</table>')
         body.append('<p style="font-size:12px;color:#6b7280;margin-top:12px">战法来自 2016–2026 全市场 '
-                    '559 万样本、74.99 万个候选战法的穷举筛选；所列年化/回撤为单票 20% 仓位、'
-                    '最多同时 3 只的组合回测结果。三段验证全正，9/9 个市场状态为正。</p>')
+                    '559 万样本、101.0 万个候选战法的穷举筛选；回测口径为单票 10% 仓位、'
+                    '最多同时 8 只。三段验证全正。</p>')
         subj = '【选股信号 %s】%s %d只 · 次日开盘买' % ('v3', today, len(ranked))
     else:
         if not S and ms:
             body.append('<p style="font-size:14px;color:#c00"><b>今日空仓</b>：当前市场状态（类%s）下，'
-                        '52 条战法历史上均为负或无记录，不出手。</p>' % cluster)
+                        '该状态调度表下无可用战法，不出手。</p>' % cluster)
         body.append('<p style="font-size:14px">今日无战法命中，<b>不买</b>。</p>')
         body.append('<p style="font-size:12px;color:#6b7280">战法要求「缩量 + 窄幅 + 站上均线 + 温和上涨」，没有符合条件就不出手。</p>')
         subj = '【选股信号 v3】%s 无信号 · 不买' % today
