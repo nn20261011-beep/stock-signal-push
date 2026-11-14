@@ -35,7 +35,13 @@
    }
   },
   "best": "A_缩量窄幅",
-  "action": "做A_缩量窄幅"
+  "action": "做A_缩量窄幅",
+  "exposure": {
+   "weight": 0.1,
+   "max_picks": 8,
+   "method": "A_缩量窄幅"
+  },
+  "basis": "该组历史最优 A_缩量窄幅，日等权 +6.56%（391 笔 / 139 天）"
  },
  "弱|大盘强": {
   "methods": {
@@ -81,7 +87,13 @@
    }
   },
   "best": "A_缩量窄幅",
-  "action": "做A_缩量窄幅"
+  "action": "做A_缩量窄幅",
+  "exposure": {
+   "weight": 0.1,
+   "max_picks": 8,
+   "method": "A_缩量窄幅"
+  },
+  "basis": "该组历史最优 A_缩量窄幅，日等权 +5.57%（501 笔 / 164 天）"
  },
  "弱|小盘强": {
   "methods": {
@@ -127,7 +139,13 @@
    }
   },
   "best": "A_缩量窄幅",
-  "action": "做A_缩量窄幅"
+  "action": "做A_缩量窄幅",
+  "exposure": {
+   "weight": 0.1,
+   "max_picks": 8,
+   "method": "A_缩量窄幅"
+  },
+  "basis": "该组历史最优 A_缩量窄幅，日等权 +4.34%（221 笔 / 66 天）"
  },
  "强|均衡": {
   "methods": {
@@ -173,7 +191,13 @@
    }
   },
   "best": "A_缩量窄幅",
-  "action": "做A_缩量窄幅"
+  "action": "做A_缩量窄幅",
+  "exposure": {
+   "weight": 0.1,
+   "max_picks": 8,
+   "method": "A_缩量窄幅"
+  },
+  "basis": "该组历史最优 A_缩量窄幅，日等权 +7.41%（599 笔 / 175 天）"
  },
  "强|大盘强": {
   "methods": {
@@ -219,7 +243,13 @@
    }
   },
   "best": "A_缩量窄幅",
-  "action": "做A_缩量窄幅"
+  "action": "做A_缩量窄幅",
+  "exposure": {
+   "weight": 0.1,
+   "max_picks": 8,
+   "method": "A_缩量窄幅"
+  },
+  "basis": "该组历史最优 A_缩量窄幅，日等权 +7.78%（261 笔 / 79 天）"
  },
  "强|小盘强": {
   "methods": {
@@ -265,7 +295,13 @@
    }
   },
   "best": "A_缩量窄幅",
-  "action": "做A_缩量窄幅"
+  "action": "做A_缩量窄幅",
+  "exposure": {
+   "weight": 0.1,
+   "max_picks": 8,
+   "method": "A_缩量窄幅"
+  },
+  "basis": "该组历史最优 A_缩量窄幅，日等权 +6.83%（1140 笔 / 244 天）"
  },
  "震荡|均衡": {
   "methods": {
@@ -311,7 +347,13 @@
    }
   },
   "best": "A_缩量窄幅",
-  "action": "做A_缩量窄幅"
+  "action": "做A_缩量窄幅",
+  "exposure": {
+   "weight": 0.1,
+   "max_picks": 8,
+   "method": "A_缩量窄幅"
+  },
+  "basis": "该组历史最优 A_缩量窄幅，日等权 +6.16%（1246 笔 / 430 天）"
  },
  "震荡|大盘强": {
   "methods": {
@@ -357,7 +399,13 @@
    }
   },
   "best": "A_缩量窄幅",
-  "action": "做A_缩量窄幅"
+  "action": "做A_缩量窄幅",
+  "exposure": {
+   "weight": 0.1,
+   "max_picks": 8,
+   "method": "A_缩量窄幅"
+  },
+  "basis": "该组历史最优 A_缩量窄幅，日等权 +8.06%（600 笔 / 243 天）"
  },
  "震荡|小盘强": {
   "methods": {
@@ -403,6 +451,51 @@
    }
   },
   "best": "A_缩量窄幅",
-  "action": "做A_缩量窄幅"
+  "action": "做A_缩量窄幅",
+  "exposure": {
+   "weight": 0.1,
+   "max_picks": 8,
+   "method": "A_缩量窄幅"
+  },
+  "basis": "该组历史最优 A_缩量窄幅，日等权 +5.72%（849 笔 / 277 天）"
+ },
+ "meta": {
+  "version": "v3.3",
+  "generated": "2026-11-14",
+  "conclusion": "9 个环境组的最优打法均为 A_缩量窄幅；环境指标对次日大盘无预测力（risk_gate.py 8 条件检验），故不做择时空仓。环境只用于调节暴露。",
+  "evidence": {
+   "portfolio_ab.py": "单票10%/8只 年化+34.2% 最大回撤-8.8%（原20%/3只 +32.1%/-13.0%）",
+   "risk_gate.py": "8 个环境风险条件次日创业板均值全部 >= 基准 +0.011%",
+   "env_position_test.py": "好12/中10/差6 → 年化+36.7% 但回撤扩到-11.2%；固定10%为均衡点"
+  },
+  "exposure": {
+   "default": {
+    "weight": 0.1,
+    "max_picks": 8,
+    "sell": "按各战法最优卖点"
+   },
+   "rules": [
+    {
+     "name": "情绪转弱",
+     "when": {
+      "earn_below": -1.0,
+      "dt_n_at_least": 30,
+      "logic": "or"
+     },
+     "weight": 0.1,
+     "max_picks": 4,
+     "note": "赚钱效应<-1% 或 跌停>=30 家时减少当日新开仓；保守处理，不声称提高收益"
+    },
+    {
+     "name": "小盘急跌",
+     "when": {
+      "cyb_chg_below": -2.5
+     },
+     "weight": 0.08,
+     "max_picks": 4,
+     "note": "创业板当日跌幅>2.5% 时降低单票权重"
+    }
+   ]
+  }
  }
 }
