@@ -200,16 +200,47 @@ def main():
     except Exception as e:
         print('判天失败，本轮全量战法兜底：%s' % e, flush=True)
 
-    # 环境暴露：数据已证明「按环境择时」无预测力，因此不空仓，
-    # 只在环境明显转弱时减少当日新开仓数量（降低暴露，不预测）
-    max_picks = 8
-    if ms is not None:
-        try:
-            if float(ms.get('earn') or 0) < -1.0 or float(ms.get('dt_n') or 0) >= 30:
-                max_picks = 4
-        except Exception:
-            pass
-    print('今日目标开仓上限 %d 只（单票 10%%）' % max_picks, flush=True)
+    # 环境暴露：从 env_decision.json 读取（数据驱动，不硬编码）
+    # 依据：环境指标对次日无预测力，故不空仓，只在环境转弱时降低暴露
+    weight, max_picks, exp_note = 0.10, 8, ''
+    try:
+        ep = os.path.join(BASE, 'env_decision.json')
+        if os.path.exists(ep):
+            ED = json.load(open(ep, encoding='utf-8'))
+            EX = ED.get('meta', {}).get('exposure', {})
+            weight = float(EX.get('default', {}).get('weight', 0.10))
+            max_picks = int(EX.get('default', {}).get('max_picks', 8))
+            earn = float(ms.get('earn') or 0) if ms else 0
+            dtn = float(ms.get('dt_n') or 0) if ms else 0
+            cyb = 0.0
+            try:
+                import urllib.request
+                _t = urllib.request.urlopen(urllib.request.Request(
+                    'https://qt.gtimg.cn/q=sz399006', headers={'User-Agent': 'Mozilla/5.0'}),
+                    timeout=8).read().decode('gbk', 'ignore')
+                _f = _t.split('=', 1)[1].strip('"').split('~')
+                cyb = float(_f[32])
+            except Exception:
+                pass
+            for rule in EX.get('rules', []):
+                w = rule.get('when', {})
+                hit = False
+                if 'earn_below' in w or 'dt_n_at_least' in w:
+                    a = earn < float(w.get('earn_below', -999)) if 'earn_below' in w else False
+                    b = dtn >= float(w.get('dt_n_at_least', 99999)) if 'dt_n_at_least' in w else False
+                    hit = (a or b) if w.get('logic') == 'or' else (a and b)
+                if 'cyb_chg_below' in w:
+                    hit = cyb <= float(w['cyb_chg_below'])
+                if hit:
+                    weight = float(rule.get('weight', weight))
+                    max_picks = int(rule.get('max_picks', max_picks))
+                    exp_note = rule.get('name', '')
+                    print('环境规则命中：%s（单票 %.0f%% / 上限 %d 只）' % (
+                        exp_note, weight * 100, max_picks), flush=True)
+                    break
+    except Exception as e:
+        print('环境规则读取失败，用默认 10%%/8只：%s' % str(e)[:60], flush=True)
+    print('今日目标开仓上限 %d 只（单票 %.0f%%）' % (max_picks, weight * 100), flush=True)
 
     hits = []
     for si, s in enumerate(S):
@@ -263,9 +294,9 @@ def main():
         used = sorted({h['s']['sell'] for h in ranked})
         sell_txt = '；'.join('%s → %s' % (k, sell_desc.get(k, k)) for k in used)
         body.append('<p style="font-size:13px">共 <b>%d</b> 只。买入口径：<b>T 日收盘出信号 → 次日开盘价买入</b>；'
-                    '已剔除 ST/退市/除权。<br><b>仓位：单票 10%%，最多同时 8 只</b>%s。</p>' % (
-                        len(ranked),
-                        '；当前环境偏弱，今日开仓上限下调至 4 只' if max_picks == 4 else ''))
+                    '已剔除 ST/退市/除权。<br><b>仓位：单票 %.0f%%，最多同时 %d 只</b>%s。</p>' % (
+                        len(ranked), weight * 100, max_picks,
+                        ('；环境规则「%s」生效，开仓上限下调至 %d 只' % (exp_note, max_picks)) if exp_note else ''))
         body.append('<p style="font-size:13px;background:#fff7ed;padding:8px;border-radius:6px">'
                     '<b>卖出按各自战法执行</b>：%s</p>' % sell_txt)
         body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
