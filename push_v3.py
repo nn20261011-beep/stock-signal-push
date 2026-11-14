@@ -300,13 +300,16 @@ def main():
     html = ''.join(body)
 
     open(os.path.join(LOG, 'mail_%s_v3.html' % today), 'w', encoding='utf-8').write(html)
-    json.dump(dict(version=VERSION, time=tstr, base_day=today,
-                   hits=len(hits), signals=[dict(code=h['code'], name=h['name'],
-                   state_deq=h['s'].get('state_deq', h['s'].get('best_deq', 0)),
-                   sell=h['s']['sell'], cluster=cluster,
-                   conds=h['s']['conds']) for h in ranked]),
-              open(os.path.join(LOG, 'latest_v3.json'), 'w', encoding='utf-8'),
-              ensure_ascii=False, indent=1)
+    # dry-run 不写 latest_v3.json：否则会把真实清单冲掉，
+    # 导致盘中修正 / 次日复盘读到调试数据
+    if not dry:
+        json.dump(dict(version=VERSION, time=tstr, base_day=today,
+                       hits=len(hits), max_picks=max_picks, signals=[dict(code=h['code'], name=h['name'],
+                       state_deq=h['s'].get('state_deq', h['s'].get('best_deq', 0)),
+                       sell=h['s']['sell'], cluster=cluster,
+                       conds=h['s']['conds']) for h in ranked]),
+                  open(os.path.join(LOG, 'latest_v3.json'), 'w', encoding='utf-8'),
+                  ensure_ascii=False, indent=1)
 
     if dry:
         print('[DRY] %s' % subj, flush=True)
