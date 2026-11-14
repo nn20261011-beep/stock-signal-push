@@ -57,7 +57,15 @@ jobs:
         run: python live_fetch.py
       - name: 复盘昨日推送（真实涨跌核对）
         run: python daily_review.py
-      - name: 生成并发送选股信号（战法池 v3）
+      - name: 七层决策（system_v4）
+        run: python system_v4.py --dry
+      - name: 发送 v4 决策邮件
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: python notify_v4.py --dry
+      - name: 生成并发送选股信号（战法池 v3 · 兜底）
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
