@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-auction_confirm_v3.py —— 9:25 竞价结束后的执行确认（不新增标的、不推低开）
+auction_confirm_v3.py —— 9:25 竞价执行确认 + 按身位新挑（剔除低开/一字/高开>7%）
 
 逻辑：读昨晚 push_v3.py 生成的 latest_v3.json 清单 → 9:25:40 抓这些票的实际开盘价
      → 标注「可按开盘价买 / 高开过多放弃」→ 9:28 前发信
@@ -21,7 +21,7 @@ os.makedirs(LOG, exist_ok=True)
 SMTP_USER = os.environ.get('SMTP_USER', 'h1533165068@qq.com')
 SMTP_PASS = os.environ.get('SMTP_PASS', 'xfboalpjikugjfgg')
 MAIL_TO = os.environ.get('MAIL_TO', 'h1533165068@qq.com')
-VERSION = 'v3.0 / 竞价执行确认'
+VERSION = 'v3.3 / 竞价执行确认'
 
 UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
@@ -224,7 +224,7 @@ def main():
     body = ['<div style="font-family:Microsoft YaHei,sans-serif;max-width:760px;margin:auto;color:#111">']
     body.append('<h2 style="font-size:18px;color:#c00">竞价执行确认 %s · 9:30 前下单</h2>' % now.strftime('%m-%d'))
     body.append('<p style="font-size:12px;color:#6b7280">策略版本：%s ｜ 生成时间：%s（北京时间）<br>'
-                '本封<b>不新增标的</b>，只确认昨晚清单的实际开盘价。</p>' % (VERSION, now.strftime('%H:%M:%S')))
+                '本封含两块：<b>① 昨晚清单执行确认 ② 竞价新挑（按身位）</b>。</p>' % (VERSION, now.strftime('%H:%M:%S')))
     body.append('<p style="font-size:13px">可买 <b>%d</b> 只。买入口径：按当前开盘价挂单；'
                 '<b>卖出：跌 5%% 立即止损，最长持 10 个交易日</b>。高开 &gt;5%% 或低开 &lt;-5%% 的放弃。</p>' % len(buy))
     body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
