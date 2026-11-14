@@ -124,7 +124,24 @@ def main():
         avg = v['amount'] * 100.0 / v['vol']      # 成交额(万)/成交量(手) → 元
         if not (p > avg):
             continue
-        vr = v['vol'] / v5 if v5 > 0 else 0
+        # 量能必须按「已过交易时间」折算：v5 是 5 日全天均量，
+        # 而 v['vol'] 是盘中累计量，直接相除在早盘永远 <1（旧版因此命中恒为 0）
+        hm = now.hour * 60 + now.minute
+        if hm <= 570:            # 9:30 前
+            elapsed = 1
+        elif hm <= 690:          # 9:30~11:30
+            elapsed = hm - 570
+        elif hm < 780:           # 午休
+            elapsed = 120
+        elif hm < 900:           # 13:00~15:00
+            elapsed = 120 + hm - 780
+        else:                    # 收盘后（dry/force 回测）
+            elapsed = 240
+        # 单位统一：_hist.pkl.gz 存的是「股」(live_fetch.py:51 手×100)，
+        # 实时行情 f[6] 是「手」。不换算会让量能比恒小于 0.02。
+        v5_hand = v5 / 100.0
+        expected = v5_hand * max(elapsed, 1) / 240.0
+        vr = v['vol'] / expected if expected > 0 else 0
         if vr < 1.5:
             continue
         hits.append(dict(code=c, name=v['name'], price=p, limit=limit,
