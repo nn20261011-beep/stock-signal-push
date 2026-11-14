@@ -1,0 +1,35 @@
+{
+ "day": "2026-11-13",
+ "stage": "发酵转弱",
+ "action": "半仓",
+ "reason": "涨停 35 家但赚钱 -1.54%，降档",
+ "env": {
+  "day": "2026-11-13",
+  "zt_n": 35,
+  "dt_n": 45,
+  "max_bd": 4,
+  "earn": -1.5351215744697675
+ },
+ "blocks": [],
+ "discipline_factor": 1.0,
+ "mode_factor": 1.0,
+ "max_weight": 0.05,
+ "max_picks": 4,
+ "picks": [
+  {
+   "code": "605255",
+   "type": "龙头",
+   "sell": "rbreak",
+   "why": "4板龙头（最高板）",
+   "close": 73.82,
+   "chg": 10.0,
+   "amp": 5.32,
+   "bd": 4,
+   "weight": 0.05,
+   "deq": null,
+   "sizing_reason": "无该阶段统计，用兜底 10%",
+   "doctrine_ok": true,
+   "doctrine_blocks": []
+  }
+ ]
+}
