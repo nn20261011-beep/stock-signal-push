@@ -52,6 +52,8 @@ jobs:
       - run: pip install -q numpy==2.1.3 pandas==2.2.3
       - name: 抓当日行情增量
         run: python live_fetch.py
+      - name: 复盘昨日推送（真实涨跌核对）
+        run: python daily_review.py
       - name: 生成并发送选股信号（战法池 v3）
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
@@ -122,3 +124,4 @@ jobs:
           if [ "${{ inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
           if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
           python seal_predict.py $ARGS
+          python intraday_guard.py $ARGS
