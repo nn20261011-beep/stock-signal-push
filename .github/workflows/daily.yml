@@ -15,6 +15,9 @@ on:
     - cron: '0 1 * * 1-5'
     # 盘中封板预警：北京 9:35~14:50 = UTC 1:35~6:50，每 5 分钟
     - cron: '*/5 1-6 * * 1-5'
+    # 整点/半点保底：GitHub 会限流高频 cron，多触发点提高覆盖率
+    - cron: '0 1-6 * * 1-5'
+    - cron: '30 1-6 * * 1-5'
   workflow_dispatch:
     inputs:
       job:
@@ -105,7 +108,7 @@ jobs:
       github.event_name == 'workflow_dispatch' && inputs.job == 'seal' ||
       github.event_name == 'schedule' && github.event.schedule == '*/5 1-6 * * 1-5'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -123,5 +126,4 @@ jobs:
           ARGS=""
           if [ "${{ inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
           if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
-          python seal_predict.py $ARGS
-          python intraday_guard.py $ARGS
+          python intraday_loop.py $ARGS
