@@ -35,6 +35,30 @@ import four_type
 import sizing
 
 
+def load_concept():
+    """载入题材映射，排除伪题材"""
+    from collections import defaultdict
+    p = os.path.join(BASE, '_concept.json')
+    if not os.path.exists(p):
+        return {}
+    CJ = json.load(open(p, encoding='utf-8'))
+    EXCL = ['参股', '专精特新', '融资融券', '股权激励', '业绩预', '重组', '重仓', '解禁',
+            '分拆', '国企改革', '资产注入', '整体上市', 'ST', '摘帽', '送转', '未股改',
+            '三板', '超大盘', '含H股', '含B股', '含GDR', '外资背景', '高校背景', '股期',
+            '科创50', '央企50', '社保', '基金', '券商', '信托', '保险', '本地', '成渝',
+            '黄河三角', '海峡西岸', '陕甘宁', '长株潭', '皖江', '雄安', '京津冀',
+            '海南自贸', '武汉规划', '沿海发展', '前海', '图们江', '自贸', '振兴沈阳',
+            '海上丝路', '三沙', '水域改革', '朝鲜改革', '迪士尼', '本月', '沪股通',
+            '深股通', 'MSCI', '标普', '富时', '转融券', '融资']
+    m = defaultdict(list)
+    for node, codes in CJ.get('concepts', {}).items():
+        if any(x in CJ.get('names', {}).get(node, '') for x in EXCL):
+            continue
+        for c in codes:
+            m[c].append(node)
+    return m
+
+
 def load_hist():
     with gzip.open(os.path.join(BASE, '_hist.pkl.gz'), 'rb') as f:
         return pickle.load(f)
@@ -110,6 +134,16 @@ def pick_candidates(K, stage):
                     break
             bd_today[c] = run
     mx = max(bd_today.values()) if bd_today else 0
+    # 当日题材涨停家数与排名（真实数据，非占位）
+    from collections import defaultdict
+    code2con = load_concept()
+    con_zt = defaultdict(int)
+    for c in bd_today:
+        for node in code2con.get(c, []):
+            con_zt[node] += 1
+    rank_map = {}
+    for i, (node, _cnt) in enumerate(sorted(con_zt.items(), key=lambda x: -x[1]), 1):
+        rank_map[node] = i
     for c, rec in K.items():
         ds = sorted(rec)
         if len(ds) < 60 or ds[-1] != today:
@@ -149,8 +183,16 @@ def pick_candidates(K, stage):
             why = '缩量窄幅（振幅%.2f%% 量比%.2f）' % (amp, V[-1] / v20 if v20 > 0 else 0)
         if not tp:
             continue
+        nodes = code2con.get(c, [])
+        if nodes:
+            best = max(nodes, key=lambda n: con_zt.get(n, 0))
+            t_zt, t_rank = con_zt.get(best, 0), rank_map.get(best, 99)
+            t_name = best
+        else:
+            t_zt, t_rank, t_name = 0, 99, ''
         out.append(dict(code=c, type=tp, sell=sell, why=why, close=round(C[-1], 2),
-                        chg=round(chg, 2), amp=round(amp, 2), bd=bdv))
+                        chg=round(chg, 2), amp=round(amp, 2), bd=bdv,
+                        theme_zt=t_zt, theme_rank=t_rank, theme=t_name))
     return out
 
 
@@ -198,10 +240,14 @@ def main():
         if w <= 0:
             continue
         w = min(w, p['weight']) * d_factor * m_factor   # 不超过该动作的单票上限
-        ctx = dict(theme_rank=1, theme_zt=5, gap_pct=None, one_word=False,
+        st_disc = discipline.load()
+        ctx = dict(theme_rank=x.get('theme_rank', 99), theme_zt=x.get('theme_zt', 0),
+                   gap_pct=None, one_word=False,
                    regime_action=action, sell_rule=x['sell'], weight=w,
-                   positions=len(sized) + 1, loss_streak=None, daily_pnl=None,
-                   mode='four_type')
+                   positions=len(sized) + 1,
+                   loss_streak=st_disc.get('loss_streak'),
+                   daily_pnl=st_disc.get('last_daily_pnl'),
+                   mode=st_disc.get('mode', 'four_type'))
         ok, blks = doctrine.check_all(ctx)
         sized.append(dict(x, weight=round(w, 4), deq=deq, sizing_reason=wreason,
                           doctrine_ok=ok, doctrine_blocks=[b['reason'] for b in blks]))
@@ -211,8 +257,9 @@ def main():
     print('', flush=True)
     print('=== 决策：%s %d 只（单票上限 %.0f%%）===' % (action, len(picks), p['weight'] * 100), flush=True)
     for x in picks:
-        print('  %s %-4s %-6s 权重%.0f%% | %s | %s' % (
+        print('  %s %-4s %-6s 权重%.0f%% | %s | 题材:%s(涨停%d,第%d) | %s' % (
             x['code'], x['type'], x['sell'], x['weight'] * 100, x['why'],
+            x.get('theme', '') or '无', x.get('theme_zt', 0), x.get('theme_rank', 99),
             '通过' if x['doctrine_ok'] else '拦截:' + ';'.join(x['doctrine_blocks'])), flush=True)
 
     out = dict(day=ms['day'], stage=stage, action=action, reason=why,
