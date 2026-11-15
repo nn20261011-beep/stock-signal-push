@@ -24,6 +24,11 @@ BJ = timezone(timedelta(hours=8))
 
 import regime
 import doctrine
+
+# 心法红线2/3（低开不做、高开>7%不追）：逐笔回测显示负贡献 9.3~10.7 个点，
+# 故默认关闭；如需只做不追高，改成 True。依据见 doctrine.md 第四节。
+GAP_FILTER = False
+GAP_LO, GAP_HI = 0.0, 7.0
 import discipline
 import review_mode
 import four_type
