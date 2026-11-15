@@ -3,144 +3,264 @@
   "n": 261,
   "deq": 3.2829999923706055,
   "win": 42.9,
-  "max_weight": 0.08
+  "max_weight": 0.08,
+  "deq_train": 3.772,
+  "deq_val": null,
+  "deq_test": null,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "前排|启动": {
   "n": 2664,
   "deq": 0.9369999766349792,
   "win": 39.9,
-  "max_weight": 0.08
+  "max_weight": 0.08,
+  "deq_train": 1.621,
+  "deq_val": 0.374,
+  "deq_test": -0.243,
+  "three_ok": false,
+  "status": "disabled_mixed"
  },
  "前排|高潮分化": {
   "n": 488,
   "deq": 0.4390000104904175,
   "win": 42.4,
-  "max_weight": 0.08
+  "max_weight": 0.08,
+  "deq_train": null,
+  "deq_val": null,
+  "deq_test": 1.606,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "前排|高潮": {
   "n": 6216,
   "deq": 0.43299999833106995,
   "win": 40.1,
-  "max_weight": 0.08
+  "max_weight": 0.08,
+  "deq_train": 0.435,
+  "deq_val": 0.124,
+  "deq_test": 0.643,
+  "three_ok": true,
+  "status": "enabled"
  },
  "前排|发酵": {
   "n": 5007,
   "deq": 0.11800000071525574,
   "win": 39.7,
-  "max_weight": 0.08
+  "max_weight": 0.08,
+  "deq_train": -0.06,
+  "deq_val": 0.474,
+  "deq_test": -0.15,
+  "three_ok": false,
+  "status": "disabled_mixed"
  },
  "前排|退潮": {
   "n": 254,
   "deq": 0.09600000083446503,
   "win": 42.5,
-  "max_weight": 0.08
+  "max_weight": 0.08,
+  "deq_train": 0.21,
+  "deq_val": null,
+  "deq_test": null,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "前排|冰点": {
   "n": 287,
   "deq": -0.03099999949336052,
   "win": 39.4,
-  "max_weight": 0.08
+  "max_weight": 0.08,
+  "deq_train": 0.158,
+  "deq_val": null,
+  "deq_test": null,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "前排|发酵转弱": {
   "n": 209,
   "deq": -1.5130000114440918,
   "win": 39.2,
-  "max_weight": 0.08
+  "max_weight": 0.08,
+  "deq_train": null,
+  "deq_val": null,
+  "deq_test": 0.379,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "补涨|高潮": {
   "n": 3838,
   "deq": 0.7160000205039978,
   "win": 63.7,
-  "max_weight": 0.06
+  "max_weight": 0.06,
+  "deq_train": 0.117,
+  "deq_val": 1.048,
+  "deq_test": 0.661,
+  "three_ok": true,
+  "status": "enabled"
  },
  "补涨|发酵": {
   "n": 1863,
   "deq": -0.2980000078678131,
   "win": 46.0,
-  "max_weight": 0.06
+  "max_weight": 0.06,
+  "deq_train": -0.33,
+  "deq_val": -0.073,
+  "deq_test": -0.592,
+  "three_ok": true,
+  "status": "disabled_neg"
  },
  "补涨|未知": {
   "n": 623,
   "deq": -0.4129999876022339,
   "win": 47.0,
-  "max_weight": 0.06
+  "max_weight": 0.06,
+  "deq_train": 0.019,
+  "deq_val": null,
+  "deq_test": null,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "补涨|退潮": {
   "n": 238,
   "deq": -0.9049999713897705,
   "win": 43.7,
-  "max_weight": 0.06
+  "max_weight": 0.06,
+  "deq_train": -0.492,
+  "deq_val": null,
+  "deq_test": null,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "补涨|启动": {
   "n": 1428,
   "deq": -1.2890000343322754,
   "win": 41.5,
-  "max_weight": 0.06
+  "max_weight": 0.06,
+  "deq_train": -1.619,
+  "deq_val": 0.029,
+  "deq_test": -2.381,
+  "three_ok": false,
+  "status": "disabled_mixed"
  },
  "补涨|冰点": {
   "n": 223,
   "deq": -1.6979999542236328,
   "win": 42.2,
-  "max_weight": 0.06
+  "max_weight": 0.06,
+  "deq_train": -0.981,
+  "deq_val": null,
+  "deq_test": null,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "补涨|高潮分化": {
   "n": 435,
   "deq": -3.7760000228881836,
   "win": 33.1,
-  "max_weight": 0.06
+  "max_weight": 0.06,
+  "deq_train": null,
+  "deq_val": null,
+  "deq_test": -4.39,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "趋势|未知": {
   "n": 173,
   "deq": 8.241000175476074,
   "win": 41.6,
-  "max_weight": 0.1
+  "max_weight": 0.1,
+  "deq_train": 8.01,
+  "deq_val": null,
+  "deq_test": null,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "趋势|发酵": {
   "n": 985,
   "deq": 5.949999809265137,
   "win": 35.7,
-  "max_weight": 0.1
+  "max_weight": 0.1,
+  "deq_train": 4.306,
+  "deq_val": 4.531,
+  "deq_test": 8.562,
+  "three_ok": true,
+  "status": "enabled"
  },
  "趋势|启动": {
   "n": 656,
   "deq": 5.51200008392334,
   "win": 39.0,
-  "max_weight": 0.1
+  "max_weight": 0.1,
+  "deq_train": 4.408,
+  "deq_val": 5.83,
+  "deq_test": 8.231,
+  "three_ok": true,
+  "status": "enabled"
  },
  "趋势|高潮": {
   "n": 1292,
   "deq": 4.835000038146973,
   "win": 32.9,
-  "max_weight": 0.1
+  "max_weight": 0.1,
+  "deq_train": 1.081,
+  "deq_val": 5.466,
+  "deq_test": 5.82,
+  "three_ok": true,
+  "status": "enabled"
  },
  "龙头|未知": {
   "n": 160,
   "deq": 8.888999938964844,
   "win": 57.5,
-  "max_weight": 0.1
+  "max_weight": 0.1,
+  "deq_train": 9.908,
+  "deq_val": null,
+  "deq_test": null,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "龙头|高潮": {
   "n": 653,
   "deq": 4.870999813079834,
   "win": 47.8,
-  "max_weight": 0.1
+  "max_weight": 0.1,
+  "deq_train": 2.677,
+  "deq_val": 5.148,
+  "deq_test": 5.465,
+  "three_ok": true,
+  "status": "enabled"
  },
  "龙头|冰点": {
   "n": 111,
   "deq": 4.146999835968018,
   "win": 47.7,
-  "max_weight": 0.1
+  "max_weight": 0.1,
+  "deq_train": null,
+  "deq_val": null,
+  "deq_test": null,
+  "three_ok": false,
+  "status": "lowsample"
  },
  "龙头|启动": {
   "n": 762,
   "deq": 3.950000047683716,
   "win": 49.2,
-  "max_weight": 0.1
+  "max_weight": 0.1,
+  "deq_train": 5.867,
+  "deq_val": 2.528,
+  "deq_test": 1.395,
+  "three_ok": true,
+  "status": "enabled"
  },
  "龙头|发酵": {
   "n": 882,
   "deq": 2.7769999504089355,
   "win": 46.7,
-  "max_weight": 0.1
+  "max_weight": 0.1,
+  "deq_train": 3.236,
+  "deq_val": 2.953,
+  "deq_test": 2.3,
+  "three_ok": true,
+  "status": "enabled"
  }
 }
