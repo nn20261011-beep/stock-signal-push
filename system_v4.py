@@ -163,24 +163,29 @@ def pick_candidates(K, stage):
         gap5 = (C[-1] / (sum(C[-6:-1]) / 5) - 1) * 100 if sum(C[-6:-1]) > 0 else 0
         bdv = bd_today.get(c, 0)
         p60 = sum(1 for x in C[-60:] if x < C[-1]) / 60 * 100
-        tp, sell, why = None, None, ''
-        # 龙头
-        if bdv >= 3 and bdv == mx and '龙头' in four_type.TYPES and stage in four_type.TYPES['龙头']['stages']:
-            tp, sell = '龙头', four_type.TYPES['龙头']['sell']
-            why = '%d板龙头（最高板）' % bdv
-        # 前排
-        elif 2 <= bdv <= 3 and stage in four_type.TYPES['前排']['stages']:
-            tp, sell = '前排', four_type.TYPES['前排']['sell']
-            why = '%d板前排' % bdv
-        # 补涨
-        elif bdv == 1 and p60 < 40 and stage in four_type.TYPES['补涨']['stages']:
-            tp, sell = '补涨', four_type.TYPES['补涨']['sell']
-            why = '低位首板（60日分位%.0f）' % p60
-        # 趋势
-        elif (amp <= 1.849 and (V[-1] / v20 if v20 > 0 else 9) <= 0.609
-              and gap5 > 1.802 and chg > 1.63 and stage in four_type.TYPES['趋势']['stages']):
-            tp, sell = '趋势', four_type.TYPES['趋势']['sell']
-            why = '缩量窄幅（振幅%.2f%% 量比%.2f）' % (amp, V[-1] / v20 if v20 > 0 else 0)
+        tp, sell, why, seg_factor, seg_note = None, None, '', 1.0, ''
+        # 段可用性由三段验证结果决定（four_type.allowed），不再用硬编码 stages
+        if bdv >= 3 and bdv == mx:
+            ok, fac, note = four_type.allowed('龙头', stage)
+            if ok:
+                tp, sell, seg_factor, seg_note = '龙头', four_type.TYPES['龙头']['sell'], fac, note
+                why = '%d板龙头（最高板）' % bdv
+        if not tp and 2 <= bdv <= 3:
+            ok, fac, note = four_type.allowed('前排', stage)
+            if ok:
+                tp, sell, seg_factor, seg_note = '前排', four_type.TYPES['前排']['sell'], fac, note
+                why = '%d板前排' % bdv
+        if not tp and bdv == 1 and p60 < 40:
+            ok, fac, note = four_type.allowed('补涨', stage)
+            if ok:
+                tp, sell, seg_factor, seg_note = '补涨', four_type.TYPES['补涨']['sell'], fac, note
+                why = '低位首板（60日分位%.0f）' % p60
+        if not tp and (amp <= 1.849 and (V[-1] / v20 if v20 > 0 else 9) <= 0.609
+                       and gap5 > 1.802 and chg > 1.63):
+            ok, fac, note = four_type.allowed('趋势', stage)
+            if ok:
+                tp, sell, seg_factor, seg_note = '趋势', four_type.TYPES['趋势']['sell'], fac, note
+                why = '缩量窄幅（振幅%.2f%% 量比%.2f）' % (amp, V[-1] / v20 if v20 > 0 else 0)
         if not tp:
             continue
         nodes = code2con.get(c, [])
@@ -190,9 +195,11 @@ def pick_candidates(K, stage):
             t_name = best
         else:
             t_zt, t_rank, t_name = 0, 99, ''
-        out.append(dict(code=c, type=tp, sell=sell, why=why, close=round(C[-1], 2),
+        out.append(dict(code=c, type=tp, sell=sell, why=why,
+                        close=round(C[-1], 2), buy_price=round(C[-1], 2),
                         chg=round(chg, 2), amp=round(amp, 2), bd=bdv,
-                        theme_zt=t_zt, theme_rank=t_rank, theme=t_name))
+                        theme_zt=t_zt, theme_rank=t_rank, theme=t_name,
+                        seg_factor=seg_factor, seg_note=seg_note))
     return out
 
 
@@ -239,7 +246,8 @@ def main():
         w, deq, wreason = sizing.weight_for(x['type'], stage)
         if w <= 0:
             continue
-        w = min(w, p['weight']) * d_factor * m_factor   # 不超过该动作的单票上限
+        w = (min(w, p['weight']) * d_factor * m_factor
+             * float(x.get('seg_factor', 1.0)))   # 三段验证降档系数
         st_disc = discipline.load()
         ctx = dict(theme_rank=x.get('theme_rank', 99), theme_zt=x.get('theme_zt', 0),
                    gap_pct=None, one_word=False,
