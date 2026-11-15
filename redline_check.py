@@ -102,6 +102,8 @@ def r5():
 
 
 def r6():
+    if '--cloud' in sys.argv:
+        return ok('R6', '云端模式跳过（大文件不在仓库）')
     mf = os.path.join(ROOT, '_minfeat2.pkl')
     kd = os.path.join(ROOT, '_kline_raw')
     if not os.path.exists(mf):
@@ -256,6 +258,8 @@ def r17():
 
 
 def r18():
+    if '--cloud' in sys.argv:
+        return ok('R18', '云端模式跳过（回测脚本不在仓库）')
     p = os.path.join(ROOT, 'bt_v4_full.py')
     if not os.path.exists(p):
         return fail('R18', '缺 bt_v4_full.py')
