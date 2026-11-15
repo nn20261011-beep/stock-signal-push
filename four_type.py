@@ -34,6 +34,34 @@ TYPES = {
 }
 
 
+def stage_status(tp, stage):
+    """按三段验证结果决定该票类在该阶段能不能做"""
+    import os, json
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'type_stage_stats.json')
+    if not os.path.exists(p):
+        return 'unknown'
+    try:
+        d = json.load(open(p, encoding='utf-8'))
+    except Exception:
+        return 'unknown'
+    r = d.get('%s|%s' % (tp, stage))
+    return r.get('status', 'unknown') if r else 'unknown'
+
+
+def allowed(tp, stage):
+    """三段通过=正常；样本少=降半仓；其余禁用"""
+    st = stage_status(tp, stage)
+    if st == 'enabled':
+        return True, 1.0, ''
+    if st == 'lowsample':
+        return True, 0.5, '三段样本不足，仓位减半'
+    if st == 'disabled_neg':
+        return False, 0.0, '三段全负，禁用'
+    if st == 'disabled_mixed':
+        return False, 0.0, '三段符号不一致，禁用'
+    return False, 0.0, '无该阶段统计，禁用'
+
+
 def tag(df, max_bd_by_day):
     """给事件池打上四类标签"""
     out = pd.Series('', index=df.index)
