@@ -22,8 +22,8 @@ def r1_theme(theme_rank, theme_zt):
     """红线1 只做主线：题材必须是当日涨停数 TOP3"""
     if not theme_rank or theme_rank > 3:
         return False, '红线1：不属于当日涨停数 TOP3 题材'
-    if not theme_zt or theme_zt < 3:
-        return False, '红线1：题材涨停数不足 3 家'
+    if not theme_zt or theme_zt < 2:
+        return False, '红线1：题材涨停数不足 2 家'
     return True, ''
 
 
