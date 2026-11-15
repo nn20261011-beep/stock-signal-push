@@ -131,7 +131,7 @@ def main():
         v = Q.get(c)
         if not v or v['price'] <= 0:
             continue
-        buy = s.get('close') or s.get('buy_price') or 0
+        buy = s.get('buy_price') or s.get('close') or 0
         if not buy:
             # 用今开作买入价近似
             buy = v['open']
