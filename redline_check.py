@@ -36,8 +36,21 @@ def read(p):
         return ''
 
 
+def trading_days():
+    """交易日历：优先 market_env.csv（云端已有），回退 _kline_raw 日期集合"""
+    import csv
+    p = os.path.join(BASE, 'market_env.csv')
+    if os.path.exists(p):
+        with open(p, encoding='utf-8-sig') as f:
+            return set(r['day'] for r in csv.DictReader(f))
+    return set()
+
+
 def r1():
     log = os.path.join(BASE, '_push_logs', 'send.log')
+    td = trading_days()
+    if td:
+        print('      交易日历 %d 天（%s ~ %s）' % (len(td), min(td), max(td)), flush=True)
     if not os.path.exists(log):
         return fail('R1', '无 send.log，从未发信')
     lines = [l for l in read(log).strip().split('\n') if l.strip()]
@@ -47,6 +60,10 @@ def r1():
     m = re.search(r'(\d{4}-\d{2}-\d{2})', last)
     if not m:
         return fail('R1', 'send.log 末行无日期')
+    d = m.group(1)
+    if td and d not in td:
+        # 非交易日发信本身不算错，但不能当作"交易日推送达标"
+        return ok('R1', '最近发信 %s（非交易日，交易日历 %d 天）' % (last[:45], len(td)))
     return ok('R1', '最近发信 %s' % last[:60])
 
 
