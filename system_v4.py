@@ -218,6 +218,15 @@ def main():
 
     stage, action, why = regime.classify(ms['zt_n'], ms['dt_n'], ms['max_bd'], ms['earn'])
     p = regime.params(action)
+    try:
+        _op = json.load(open(os.path.join(BASE, 'optimized_params.json'), encoding='utf-8'))
+        p = dict(p)
+        p['max_picks'] = int(_op.get('max_pos', p['max_picks']))
+        p['weight'] = float(_op.get('weight_cap', p['weight']))
+        print('优化参数：单票%.0f%% 上限%d只 卖点%s' % (
+            p['weight'] * 100, p['max_picks'], _op.get('ret_col', 'sl5')), flush=True)
+    except Exception:
+        pass
     print('判天：%s → %s（%s）' % (stage, action, why), flush=True)
 
     allow, blocks, d_factor = discipline.check_before_open()
