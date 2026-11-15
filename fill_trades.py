@@ -19,6 +19,7 @@ BJ = timezone(timedelta(hours=8))
 
 
 def load_kline():
+    # 本地优先全历史 _kline_raw；云端无该目录时回退 _hist.pkl.gz（最近320根，5元组）
     K = {}
     for fp in glob.glob(os.path.join(ROOT, '_kline_raw', '*.pkl')):
         c = os.path.basename(fp).replace('.pkl', '')
@@ -26,6 +27,13 @@ def load_kline():
             K[c] = pickle.load(open(fp, 'rb'))
         except Exception:
             pass
+    if K:
+        return K
+    import gzip
+    hp = os.path.join(BASE, '_hist.pkl.gz')
+    if os.path.exists(hp):
+        with gzip.open(hp, 'rb') as f:
+            return pickle.load(f)
     return K
 
 
