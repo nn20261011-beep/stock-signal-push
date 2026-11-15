@@ -18,11 +18,33 @@ from datetime import datetime, timezone, timedelta
 BJ = timezone(timedelta(hours=8))
 
 # 三档 → 仓位参数（与 doctrine 红线 6/7 兼容）
+def _load_opt():
+    import os, json
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'optimized_params.json')
+    if os.path.exists(p):
+        try:
+            return json.load(open(p, encoding='utf-8'))
+        except Exception:
+            pass
+    return {}
+
+
+_OPT = _load_opt()
+_R = _OPT.get('regime', {})
+ZT_LO = _R.get('zt_lo', 20)
+ZT_HI = _R.get('zt_hi', 55)
+EARN_LO = _R.get('earn_lo', -1.0)
+EARN_HI = _R.get('earn_hi', 1.0)
+_EXP = _OPT.get('exposure', {})
+
 ACTIONS = {
     # weight = 单票权重；max_picks = 最多持仓数；exposure = 总仓位上限（=weight×max_picks）
-    '做':   dict(weight=0.10, max_picks=8, exposure=0.80, label='正常'),
-    '半仓': dict(weight=0.05, max_picks=4, exposure=0.20, label='半仓'),
-    '不做': dict(weight=0.0,  max_picks=0, exposure=0.00, label='空仓'),
+    '做':   dict(weight=_OPT.get('weight_cap', 0.10), max_picks=_OPT.get('max_pos', 8),
+                 exposure=_EXP.get('做', 0.80), label='正常'),
+    '半仓': dict(weight=round(_OPT.get('weight_cap', 0.10) * 0.5, 4),
+                 max_picks=max(1, _OPT.get('max_pos', 8) // 2),
+                 exposure=_EXP.get('半仓', 0.20), label='半仓'),
+    '不做': dict(weight=0.0, max_picks=0, exposure=0.0, label='空仓'),
 }
 
 
@@ -35,27 +57,27 @@ def classify(zt_n, dt_n, max_bd, earn):
     max_bd = float(max_bd or 0)
 
     # 退潮：涨停少但赚钱效应高 —— 少数票拉、多数票跌，最差组合
-    if zt_n < 20 and earn > 1:
+    if zt_n < ZT_LO and earn > EARN_HI:
         return '退潮', '不做', '涨停仅 %.0f 家但赚钱效应 %+.2f%%，少数票撑指数，历史未来5日 -0.50~-0.91%%' % (zt_n, earn)
     # 冰点：涨停少且赚钱效应低 —— 反转机会
-    if zt_n < 20 and earn <= 1:
+    if zt_n < ZT_LO and earn <= EARN_HI:
         return '冰点', '半仓', '涨停 %.0f 家、赚钱 %+.2f%%，历史未来5日 +0.23~+0.36%%，反转试仓' % (zt_n, earn)
     # 高潮：涨停多 + 赚钱高 + 高位
-    if zt_n > 55 and earn > 1:
+    if zt_n > ZT_HI and earn > EARN_HI:
         if max_bd >= 6:
             return '高潮', '做', '涨停 %.0f 家、赚钱 %+.2f%%、最高 %.0f 板，主升浪（历史 +0.86%%）' % (zt_n, earn, max_bd)
         return '高潮', '做', '涨停 %.0f 家、赚钱 %+.2f%%，历史未来5日 +0.35~+0.76%%' % (zt_n, earn)
     # 高潮但赚钱效应中性 —— 打折
-    if zt_n > 55 and -1 <= earn <= 1:
+    if zt_n > ZT_HI and EARN_LO <= earn <= EARN_HI:
         return '高潮分化', '半仓', '涨停 %.0f 家但赚钱 %+.2f%%，历史 -0.22%%，降档' % (zt_n, earn)
     # 发酵
-    if 35 <= zt_n <= 55 and earn > -1:
+    if ZT_LO + 10 <= zt_n <= ZT_HI and earn > EARN_LO:
         return '发酵', '做', '涨停 %.0f 家、赚钱 %+.2f%%，历史 +0.13~+0.76%%' % (zt_n, earn)
     # 启动
-    if 20 <= zt_n < 35:
+    if ZT_LO <= zt_n < ZT_LO + 10:
         return '启动', '半仓', '涨停 %.0f 家、赚钱 %+.2f%%，历史 +0.08~+0.26%%，试仓' % (zt_n, earn)
     # 其余
-    if zt_n >= 35 and earn <= -1:
+    if zt_n >= ZT_LO + 10 and earn <= EARN_LO:
         return '发酵转弱', '半仓', '涨停 %.0f 家但赚钱 %+.2f%%，降档' % (zt_n, earn)
     return '震荡', '半仓', '涨停 %.0f 家、赚钱 %+.2f%%，无显著优势' % (zt_n, earn)
 
