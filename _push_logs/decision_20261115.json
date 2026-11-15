@@ -25,11 +25,16 @@
    "chg": 10.0,
    "amp": 5.32,
    "bd": 4,
+   "theme_zt": 0,
+   "theme_rank": 99,
+   "theme": "",
    "weight": 0.05,
    "deq": null,
    "sizing_reason": "无该阶段统计，用兜底 10%",
-   "doctrine_ok": true,
-   "doctrine_blocks": []
+   "doctrine_ok": false,
+   "doctrine_blocks": [
+    "红线1：不属于当日涨停数 TOP3 题材"
+   ]
   }
  ]
 }
