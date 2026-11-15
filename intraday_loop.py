@@ -23,8 +23,8 @@ def in_session():
 def main():
     force = '--force' in sys.argv
     dry = '--dry' in sys.argv
-    rounds = int(os.environ.get('INTRADAY_ROUNDS', '4'))
-    gap = int(os.environ.get('INTRADAY_GAP', '180'))
+    rounds = int(os.environ.get('INTRADAY_ROUNDS', '8'))
+    gap = int(os.environ.get('INTRADAY_GAP', '120'))
     if not force and not in_session():
         print('%s 不在盘中，跳过' % datetime.now(BJ).strftime('%H:%M'), flush=True)
         return
