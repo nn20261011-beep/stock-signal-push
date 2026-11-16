@@ -126,6 +126,10 @@ def main():
         if prev <= 0 or p <= 0 or v['high'] <= 0:
             continue
         limit = round(prev * 1.10, 2)
+        # 只推「今日尚未触板」的票 —— 11 年回测：一次封死 +3.45%，
+        # 开过板再追 -2.94%，逐年差值 2.16~20.64 点从未反转
+        if v['high'] >= limit * 0.998:
+            continue
         dist = (limit / p - 1) * 100
         if not (1.2 <= dist <= 2.0):
             continue
