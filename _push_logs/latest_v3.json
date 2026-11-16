@@ -1,24 +1,41 @@
 {
  "version": "v3.3 / 战法池2026-11-12 / 101.0万战法穷举 / 66条调度战法(全量18781条筛出)",
- "time": "2026-11-14 23:06:35",
- "base_day": "2026-11-13",
- "hits": 2,
+ "time": "2026-11-16 19:14:53",
+ "base_day": "2026-11-16",
+ "hits": 9,
+ "max_picks": 4,
  "signals": [
   {
-   "code": "002352",
-   "name": "顺丰控股",
+   "code": "600064",
+   "name": "南京高科",
    "state_deq": 8.85,
    "sell": "sl8",
    "cluster": 0,
    "conds": "gap5 in (-inf, -0.981] & zt120 in (-inf, 0.0] & vol_r in (1.063, +inf] & chg in (0.73, +inf]"
   },
   {
-   "code": "600873",
-   "name": "梅花生物",
+   "code": "600153",
+   "name": "建发股份",
    "state_deq": 8.85,
    "sell": "sl8",
    "cluster": 0,
    "conds": "gap5 in (-inf, -0.981] & zt120 in (-inf, 0.0] & vol_r in (1.063, +inf] & chg in (0.73, +inf]"
+  },
+  {
+   "code": "000927",
+   "name": "中国铁物",
+   "state_deq": 6.14,
+   "sell": "sl5",
+   "cluster": 0,
+   "conds": "gap60 in (-5.018, 2.589] & gap10 in (-inf, -1.589] & vol_r in (1.063, +inf] & chg in (0.73, +inf]"
+  },
+  {
+   "code": "600655",
+   "name": "豫园股份",
+   "state_deq": 6.14,
+   "sell": "sl5",
+   "cluster": 0,
+   "conds": "gap60 in (-5.018, 2.589] & gap10 in (-inf, -1.589] & vol_r in (1.063, +inf] & chg in (0.73, +inf]"
   }
  ]
 }
