@@ -106,8 +106,18 @@ def main():
     Q = quotes(codes)
     print('行情 %d 只' % len(Q), flush=True)
 
+    # 当天已推送过的票不再推（避免同一只票 5 分钟内重复轰炸）
+    sent_fp = os.path.join(LOG, 'seal_sent_%s.json' % now.strftime('%Y%m%d'))
+    sent = {}
+    if os.path.exists(sent_fp):
+        try:
+            sent = json.load(open(sent_fp, encoding='utf-8'))
+        except Exception:
+            sent = {}
     hits = []
     for c, v in Q.items():
+        if c in sent:
+            continue
         if c not in ref:
             continue
         v5, last_close = ref[c]
@@ -148,9 +158,17 @@ def main():
                          dist=round(dist, 2), gap=round((p / prev - 1) * 100, 2),
                          above=round(p / avg, 3), vr=round(vr, 2)))
     hits.sort(key=lambda x: x['dist'])
-    hits = hits[:3]
+    hits = hits[:2]
     print('命中 %d 只' % len(hits), flush=True)
 
+    # 记录本次推送的票
+    if hits and not dry:
+        for h in hits:
+            sent[h['code']] = now.strftime('%H:%M')
+        try:
+            json.dump(sent, open(sent_fp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        except Exception:
+            pass
     st = os.path.join(LOG, 'seal_count_%s.txt' % now.strftime('%Y%m%d'))
     if not dry and not force and os.path.exists(st):
         n = int(open(st).read().strip() or 0)
