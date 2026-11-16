@@ -64,14 +64,24 @@ jobs:
       - name: 对话红线机检（未通过则不推送）
         run: python redline_check.py --cloud
       - name: 七层决策（system_v4）
-        run: python system_v4.py --dry
+        env:
+          DRY_RUN: ${{ inputs.dry }}
+        run: |
+          ARGS=""
+          if [ "$DRY_RUN" = "true" ]; then ARGS="--dry"; fi
+          python system_v4.py $ARGS
       - name: 发送 v4 决策邮件
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
-        run: python notify_v4.py --dry
-      - name: 生成并发送选股信号（战法池 v3 · 兜底）
+          DRY_RUN: ${{ inputs.dry }}
+        run: |
+          ARGS=""
+          if [ "$DRY_RUN" = "true" ]; then ARGS="--dry"; fi
+          python notify_v4.py $ARGS
+      - name: 生成并发送选股信号（战法池 v3 · 仅 v4 失败时兜底）
+        if: failure()
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
@@ -140,4 +150,4 @@ jobs:
           ARGS=""
           if [ "${{ inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
           if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
-          INTRADAY_ROUNDS=8 INTRADAY_GAP=120 python intraday_loop.py $ARGS
+          INTRADAY_ROUNDS=4 INTRADAY_GAP=600 python intraday_loop.py $ARGS
