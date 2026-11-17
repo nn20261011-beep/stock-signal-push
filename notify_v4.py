@@ -29,9 +29,24 @@ def send(subject, html):
     s.quit()
 
 
+def already_sent_today(today):
+    """当天已发过 v4 决策就跳过（避免多个 cron 触发点重复发信）"""
+    log = os.path.join(LOG, 'send.log')
+    if not os.path.exists(log):
+        return False
+    for ln in open(log, encoding='utf-8').read().strip().split('\n'):
+        if today in ln and '决策 v4' in ln and 'DRY' not in ln:
+            return True
+    return False
+
+
 def main():
     dry = '--dry' in sys.argv
     now = datetime.now(BJ)
+    today = now.strftime('%Y-%m-%d')
+    if already_sent_today(today):
+        print('今日已发过 v4 决策，跳过（%s）' % today, flush=True)
+        return
     fp = os.path.join(LOG, 'decision_%s.json' % now.strftime('%Y%m%d'))
     if not os.path.exists(fp):
         cand = sorted([f for f in os.listdir(LOG) if f.startswith('decision_')])
