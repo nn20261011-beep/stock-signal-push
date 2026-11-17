@@ -1,66 +1,21 @@
 {
- "day": "2026-11-16",
+ "day": "2026-11-17",
  "stage": "启动",
  "action": "半仓",
- "reason": "涨停 29 家、赚钱 +1.32%，历史 +0.08~+0.26%，试仓",
+ "reason": "涨停 31 家、赚钱 -0.58%，历史 +0.08~+0.26%，试仓",
  "env": {
-  "day": "2026-11-16",
-  "zt_n": 29,
+  "day": "2026-11-17",
+  "zt_n": 31,
   "dt_n": 75,
-  "max_bd": 4,
-  "earn": 1.3190346384222937
+  "max_bd": 3,
+  "earn": -0.5757653694551411
  },
- "blocks": [],
- "discipline_factor": 1.0,
+ "blocks": [
+  "纪律：昨日组合 -6.70%，今日仓位减半"
+ ],
+ "discipline_factor": 0.5,
  "mode_factor": 1.0,
  "max_weight": 0.1,
  "max_picks": 10,
- "picks": [
-  {
-   "code": "002905",
-   "type": "趋势",
-   "sell": "sl5",
-   "why": "缩量窄幅（振幅0.00% 量比0.48）",
-   "close": 10.89,
-   "buy_price": 10.89,
-   "chg": 10.0,
-   "amp": 0.0,
-   "bd": 2,
-   "theme_zt": 0,
-   "theme_rank": 99,
-   "theme": "",
-   "seg_factor": 1.0,
-   "seg_note": "",
-   "weight": 0.1,
-   "deq": 5.51200008392334,
-   "sizing_reason": "日等权 5.51% → 单票 10%",
-   "doctrine_ok": false,
-   "doctrine_blocks": [
-    "红线1：不属于当日涨停数 TOP3 题材"
-   ]
-  },
-  {
-   "code": "002148",
-   "type": "龙头",
-   "sell": "rbreak",
-   "why": "4板龙头（最高板）",
-   "close": 8.75,
-   "buy_price": 8.75,
-   "chg": 10.06,
-   "amp": 10.06,
-   "bd": 4,
-   "theme_zt": 2,
-   "theme_rank": 5,
-   "theme": "gn_xmgn",
-   "seg_factor": 1.0,
-   "seg_note": "",
-   "weight": 0.08,
-   "deq": 3.950000047683716,
-   "sizing_reason": "日等权 3.95% → 单票 8%",
-   "doctrine_ok": false,
-   "doctrine_blocks": [
-    "红线1：不属于当日涨停数 TOP3 题材"
-   ]
-  }
- ]
+ "picks": []
 }
