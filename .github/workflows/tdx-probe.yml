@@ -1,0 +1,24 @@
+name: tdx-probe
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: install
+        run: pip install -q eltdx
+      - name: probe
+        run: |
+          python -c "
+          import eltdx,traceback
+          try:
+              c=eltdx.Client(timeout=15); c.connect(); print('CONNECT_OK')
+              r=c.trades.opening_match_history('002579','20261119')
+              print('AUCTION_OK',r.price,r.volume,r.order_count); c.close()
+          except Exception as e:
+              print('FAIL',type(e).__name__,str(e)[:200])
+          "
