@@ -1,64 +1,12 @@
 {
  "day": "2026-11-19",
  "stage": "冰点",
- "action": "半仓",
+ "action": "不做",
  "reason": "涨停 23 家、赚钱 -0.16%，历史未来5日 +0.23~+0.36%，反转试仓",
- "env": {
-  "day": "2026-11-19",
-  "zt_n": 23,
-  "dt_n": 75,
-  "max_bd": 3,
-  "earn": -0.1553892258365502
- },
- "blocks": [],
- "discipline_factor": 1.0,
- "mode_factor": 1.0,
- "max_weight": 0.1,
- "max_picks": 10,
- "picks": [
-  {
-   "code": "002771",
-   "type": "龙头",
-   "sell": "rbreak",
-   "why": "3板龙头（最高板）",
-   "close": 14.38,
-   "buy_price": 14.38,
-   "chg": 10.02,
-   "amp": 0.0,
-   "bd": 3,
-   "theme_zt": 2,
-   "theme_rank": 3,
-   "theme": "gn_jmrh",
-   "seg_factor": 0.5,
-   "seg_note": "三段样本不足，仓位减半",
-   "weight": 0.05,
-   "deq": 4.146999835968018,
-   "sizing_reason": "日等权 4.15% → 单票 10%",
-   "doctrine_ok": true,
-   "doctrine_blocks": []
-  },
-  {
-   "code": "603324",
-   "type": "龙头",
-   "sell": "rbreak",
-   "why": "3板龙头（最高板）",
-   "close": 25.19,
-   "buy_price": 25.19,
-   "chg": 10.0,
-   "amp": 17.03,
-   "bd": 3,
-   "theme_zt": 0,
-   "theme_rank": 99,
-   "theme": "",
-   "seg_factor": 0.5,
-   "seg_note": "三段样本不足，仓位减半",
-   "weight": 0.05,
-   "deq": 4.146999835968018,
-   "sizing_reason": "日等权 4.15% → 单票 10%",
-   "doctrine_ok": false,
-   "doctrine_blocks": [
-    "红线1：不属于当日涨停数 TOP3 题材"
-   ]
-  }
- ]
+ "blocks": [
+  "纪律：已连亏 4 笔，今日空仓"
+ ],
+ "picks": [],
+ "max_weight": 0,
+ "max_picks": 0
 }
