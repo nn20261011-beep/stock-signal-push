@@ -188,14 +188,18 @@ def main():
                         gap = (v['open'] / v['prev'] - 1) * 100
                         limit = round(v['prev'] * 1.10, 2)
                         oneword = v['open'] >= limit - 0.011      # 一字板买不到
+                        # 回测（13,473笔/483天）：只有 3 板 + 高开2~5% 的次日开盘卖为正
+                        # 首板/2板/4板 次日开盘卖全为负；加量比过滤反而更差（无效因子）
                         if oneword or gap <= 0 or gap > 7:
                             continue                              # 不接低开、不追一字
+                        if bd != 3 or not (2.0 <= gap <= 5.0):
+                            continue                              # 只做「3板 + 高开2~5%」
                         fresh.append(dict(code=c, name=v['name'], bd=bd, open=v['open'],
                                           gap=round(gap, 2),
                                           score=bd * 10 + min(gap, 7)))
                     fresh.sort(key=lambda x: -x['score'])
                     fresh = fresh[:5]
-                    print('竞价新挑 %d 只（昨日涨停池 %d 只，剔除低开/一字/高开>7%%）' % (
+                    print('竞价新挑 %d 只（昨日涨停 %d 只 → 只保留3板+高开2~5%%）' % (
                         len(fresh), len(pool)), flush=True)
     except Exception as e:
         print('竞价新挑失败（不影响主清单确认）：%s' % e, flush=True)
@@ -243,7 +247,9 @@ def main():
     if fresh:
         body.append('<h3 style="font-size:15px;margin-top:18px">竞价新挑（昨日涨停池 · 按身位）</h3>')
         body.append('<p style="font-size:12px;color:#6b7280">只在昨日涨停股里选；'
-                    '<b>剔除低开、一字、高开&gt;7%</b>。按连板高度优先，最多 5 只。</p>')
+                    '<b>只做「昨日3板 + 今日高开2~5%」</b>。'
+                    '依据：2024-11~2026-11 共 13,473 笔回测，3板+高开2~5% 次日开盘卖 +1.03%%、'
+                    '次日冲高卖 +7.17%%（胜率73%%）；首板/2板/4板次日开盘卖均为负。</p>')
         body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
         body.append('<tr style="background:#f9fafb"><th align=left>代码</th><th align=left>名称</th>'
                     '<th align=right>昨日连板</th><th align=right>竞价开盘</th><th align=right>竞价涨幅</th>'
