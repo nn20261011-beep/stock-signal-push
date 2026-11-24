@@ -114,7 +114,7 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-      - name: 竞价执行确认（自旋到 9:25:40）
+      - name: 竞价时段模式简报（个股推送已停）
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
@@ -122,10 +122,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TZ: Asia/Shanghai
         run: |
-          ARGS=""
-          if [ "${{ inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
-          if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
-          python auction_confirm_v3.py $ARGS
+          # 2026-11-24 停推个股：等「模式→战法」体系建成
+          # 原逻辑每天读冻死的 _push_logs/latest_v3.json（base_day 2026-11-16），重复推同一批 4 只
+          # 恢复：删掉下面两行，恢复 python auction_confirm_v3.py $ARGS
+          echo "个股竞价推送已停用（等模式体系建成）"
+          python mode_brief.py || true
 
   seal:
     if: |
