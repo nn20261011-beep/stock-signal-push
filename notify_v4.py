@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""notify_v4.py —— 把 system_v4 的决策发成邮件"""
+"""notify_v4.py —— 模式简报邮件（体系建成前不列个股）"""
 import os, sys, json, smtplib, ssl, gzip, pickle
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
@@ -12,10 +12,15 @@ SMTP_USER = os.environ.get('SMTP_USER', 'h1533165068@qq.com')
 SMTP_PASS = os.environ.get('SMTP_PASS', 'xfboalpjikugjfgg')
 MAIL_TO = os.environ.get('MAIL_TO', 'h1533165068@qq.com')
 
-SELL_TXT = {'sl5': '跌5%止损/上限10日', 'sl8': '跌8%止损/上限10日',
+SELL_TXT = {'r1': 'T+2收盘卖（T+1开盘买）',
+            'sl5': '跌5%止损/上限10日', 'sl8': '跌8%止损/上限10日',
             'rbreak': '断板次日走', 'r10': '持满10日', 'r5': '持满5日',
             'r3': '持满3日', 'tp8': '涨8%止盈', 'tp5': '涨5%止盈',
             'ma5_n': '跌破MA5走', 'ma10_n': '跌破MA10走'}
+
+# 聚类模式 → 已验证战法。空字典 = 所有模式“暂无战法，不做”
+# 只有通过「三段胜率门槛 + 扣0.2% + 跨模式对照」的战法才能填进来
+MODE_STRATEGY = {}
 
 
 def send(subject, html):
@@ -30,14 +35,52 @@ def send(subject, html):
 
 
 def already_sent_today(today):
-    """当天已发过 v4 决策就跳过（避免多个 cron 触发点重复发信）"""
     log = os.path.join(LOG, 'send.log')
     if not os.path.exists(log):
         return False
     for ln in open(log, encoding='utf-8').read().strip().split('\n'):
-        if today in ln and '决策 v4' in ln and 'DRY' not in ln:
+        if today in ln and ('决策 v4' in ln or '模式简报' in ln) and 'DRY' not in ln:
             return True
     return False
+
+
+def build_brief(d, picks):
+    """模式简报：只报模式、战法、信号数。不列个股。"""
+    md = None
+    try:
+        import mode_predict
+        md = mode_predict.today_mode()
+    except Exception as e:
+        print('模式判定失败：%s' % e, flush=True)
+    env = d.get('env') or {}
+    body = ['<div style="font-family:Microsoft YaHei,sans-serif;max-width:720px;color:#111">']
+    body.append('<h2 style="font-size:18px">%s 模式简报</h2>' % d.get('day', ''))
+    if md:
+        r = md['raw']
+        body.append('<p style="font-size:15px;background:#eef2ff;padding:10px;border-radius:6px">'
+                    '<b>模式：%s %s</b><br>'
+                    '<span style="font-size:12px;color:#374151">依据：涨停 %d 家、跌停 %d 家、赚钱 %+.2f%%、'
+                    '最高 %d 板、梯队断层 %d、上涨占比 %.1f%%、中位 %+.2f%%、成交额分位 %.0f%%</span></p>'
+                    % (md['mode'], md['desc'], r['zt_n'], r['dt_n'], r['earn'], r['max_bd'],
+                       r['tier_gap'], r['up_ratio'], r['med_chg'], r['amt_pct']))
+    else:
+        body.append('<p style="font-size:15px;background:#eef2ff;padding:10px">'
+                    '<b>模式：判定失败</b>（涨停 %s 家、赚钱 %s%%）</p>'
+                    % (env.get('zt_n', '-'), env.get('earn', '-')))
+    code = md['mode'] if md else None
+    stg = MODE_STRATEGY.get(code) if code else None
+    if stg:
+        body.append('<p style="font-size:14px"><b>本模式战法</b>：%s %s（三段 %s%%，胜率 %.1f%%，历史均值）</p>'
+                    % (stg['code'], stg['name'],
+                       '/'.join('%+.2f' % v for v in stg['seg']), stg['win']))
+    else:
+        body.append('<p style="font-size:14px;color:#b45309"><b>本模式战法</b>：暂无验证通过的战法，不做。</p>')
+    body.append('<p style="font-size:15px"><b>今日信号</b>：<b>%d</b> 只（个股清单暂停推送，体系建成后恢复）</p>'
+                % (0 if not stg else len(picks)))
+    body.append('<p style="font-size:11px;color:#6b7280;margin-top:10px">'
+                '模式来自 K-means 聚类（K=3，轮廓系数 0.202，12 维市场特征），非手写阈值。'
+                '战法须通过「三段胜率门槛 + 扣 0.2% 成本 + 跨模式对照」才列入本模式。</p></div>')
+    return ''.join(body)
 
 
 def main():
@@ -45,7 +88,7 @@ def main():
     now = datetime.now(BJ)
     today = now.strftime('%Y-%m-%d')
     if already_sent_today(today):
-        print('今日已发过 v4 决策，跳过（%s）' % today, flush=True)
+        print('今日已发过，跳过（%s）' % today, flush=True)
         return
     fp = os.path.join(LOG, 'decision_%s.json' % now.strftime('%Y%m%d'))
     if not os.path.exists(fp):
@@ -56,48 +99,16 @@ def main():
         fp = os.path.join(LOG, cand[-1])
     d = json.load(open(fp, encoding='utf-8'))
     picks = d.get('picks') or []
-    body = ['<div style="font-family:Microsoft YaHei,sans-serif;max-width:760px;color:#111">']
-    body.append('<h2 style="font-size:18px">%s 收盘决策 · 七层模式 v4</h2>' % d.get('day', ''))
-    body.append('<p style="font-size:12px;color:#6b7280">生成时间 %s ｜ 判天：%s ｜ 动作：%s</p>' % (
-        now.strftime('%Y-%m-%d %H:%M'), d.get('stage', ''), d.get('action', '')))
-    body.append('<p style="font-size:13px;background:#eef2ff;padding:8px;border-radius:6px">'
-                '<b>判天依据</b>：%s</p>' % d.get('reason', ''))
-    if d.get('blocks'):
-        body.append('<p style="font-size:13px;background:#fef2f2;padding:8px;color:#b91c1c">'
-                    '<b>纪律拦截</b>：%s</p>' % '；'.join(d['blocks']))
-    if not picks:
-        body.append('<p style="font-size:15px;color:#b91c1c"><b>今日空仓</b>，不推任何标的。</p>')
-    else:
-        body.append('<p style="font-size:13px">共 <b>%d</b> 只，单票上限 <b>%.0f%%</b>，'
-                    '最多同时 %d 只。买入口径：次日竞价确认后按开盘价买入（低开/高开>7%% 放弃）。</p>' % (
-                        len(picks), float(d.get('max_weight', 0)) * 100, int(d.get('max_picks', 0))))
-        body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
-        body.append('<tr style="background:#f9fafb"><th align=left>代码</th><th align=left>票类</th>'
-                    '<th align=right>今收</th><th align=left>理由</th><th align=right>权重</th>'
-                    '<th align=left>卖点</th></tr>')
-        for x in picks:
-            body.append('<tr><td><b>%s</b></td><td>%s</td><td align=right>%.2f</td>'
-                        '<td style="font-size:11px">%s</td><td align=right>%.0f%%</td>'
-                        '<td style="font-size:12px">%s</td></tr>' % (
-                            x['code'], x['type'], float(x['close']), x['why'],
-                            float(x['weight']) * 100, SELL_TXT.get(x['sell'], x['sell'])))
-        body.append('</table>')
-    body.append('<p style="font-size:12px;color:#6b7280;margin-top:12px">'
-                '七层模式：心法十条 → 判天五阶段 → 四类票 → 三买四卖 → 赢面分档 → 纪律熔断 → 复盘降档。'
-                '心法红线逐条机检，未通过的不出现在本表。</p></div>')
-    html = ''.join(body)
-    subj = '【决策 v4】%s %s · %s %d只' % (
-        d.get('day', ''), d.get('stage', ''), d.get('action', ''), len(picks))
+    html = build_brief(d, picks)
+    subj = '【模式简报】%s %s' % (d.get('day', ''), d.get('stage', ''))
     if dry:
         print('[DRY]', subj, flush=True)
-        for x in picks:
-            print('  %s %-4s %.0f%% %s' % (x['code'], x['type'], float(x['weight']) * 100, x['why']), flush=True)
     else:
         send(subj, html)
         print('已发：%s' % subj, flush=True)
     with open(os.path.join(LOG, 'send.log'), 'a', encoding='utf-8') as f:
-        f.write('%s | %s | %d只 | %s\n' % (now.strftime('%Y-%m-%d %H:%M:%S'), subj,
-                                           len(picks), 'DRY' if dry else 'OK'))
+        f.write('%s | %s | 简报 | %s\n' % (now.strftime('%Y-%m-%d %H:%M:%S'), subj,
+                                          'DRY' if dry else 'OK'))
 
 
 if __name__ == '__main__':
