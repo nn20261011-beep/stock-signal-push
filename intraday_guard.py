@@ -94,22 +94,39 @@ def main():
         print('无早盘清单，跳过', flush=True)
         return
     prev = json.load(open(lp, encoding='utf-8'))
-    # 过期清单不修正：base_day 必须是最近 3 个交易日内
-    try:
-        import gzip, pickle
-        with gzip.open(os.path.join(BASE, '_hist.pkl.gz'), 'rb') as f:
-            K = pickle.load(f)
-        latest = max(max(v) for v in K.values())
-        bd = prev.get('base_day', '')
-        if bd and bd < str(latest)[:10]:
-            # 允许 T-1（清单是昨晚生成、今天执行）
-            from datetime import date
-            gap = (date.fromisoformat(str(latest)[:10]) - date.fromisoformat(bd)).days
-            if gap > 4:
-                print('清单过期（base_day=%s，行情最新=%s），跳过' % (bd, str(latest)[:10]), flush=True)
-                return
-    except Exception:
-        pass
+    # 清单必须来自最近一个交易日：latest_v3.json 曾停在 base_day=2026-11-16，
+    # 导致 11-17~11-25 连续 7 个交易日盘中修正全部跳过（gap>4 return）。
+    # 现在优先读当日/昨日的 decision_YYYYMMDD.json，没有才退回 latest_v3.json。
+    today = now.strftime('%Y%m%d')
+    dpath = os.path.join(LOG, 'decision_%s.json' % today)
+    if os.path.exists(dpath):
+        d = json.load(open(dpath, encoding='utf-8'))
+        sigs_today = d.get('picks') or []
+        if sigs_today:
+            prev = dict(base_day=d.get('day', now.strftime('%Y-%m-%d')),
+                        signals=[dict(code=x['code'], close=x.get('close'),
+                                      buy_price=x.get('buy_price')) for x in sigs_today])
+            print('使用当日决策清单 %s（%d 只）' % (os.path.basename(dpath), len(sigs_today)), flush=True)
+        else:
+            print('当日决策清单为空，盘中修正跳过', flush=True)
+            return
+    else:
+        # 退回 latest_v3.json，但严格校验必须在 4 天内；过期就停用而不是静默修正冻死清单
+        try:
+            import gzip, pickle
+            with gzip.open(os.path.join(BASE, '_hist.pkl.gz'), 'rb') as f:
+                K = pickle.load(f)
+            latest = max(max(v) for v in K.values())
+            bd = prev.get('base_day', '')
+            if bd and bd < str(latest)[:10]:
+                from datetime import date
+                gap = (date.fromisoformat(str(latest)[:10]) - date.fromisoformat(bd)).days
+                if gap > 4:
+                    print('清单过期（base_day=%s，行情最新=%s），停用盘中修正' % (
+                        bd, str(latest)[:10]), flush=True)
+                    return
+        except Exception:
+            pass
     sigs = prev.get('signals') or []
     if not sigs:
         print('早盘无信号，无需修正', flush=True)
