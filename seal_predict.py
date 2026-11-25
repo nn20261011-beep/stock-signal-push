@@ -4,16 +4,17 @@ seal_predict.py —— 盘中「即将封板」预警
 
 规则（样本外 222 次验证）：
   距涨停 1.2%~2% ＋ 现价在当日均价上方 ＋ 当日量能放大(>1.5倍5日均量)
-  → 封板率 18.5%（全样本基础率 3.0%，提升约 6 倍），平均提前 1.8 分钟
+  → 封板率 18.5%（全样本基础率 3.0%），平均提前 1.8 分钟
 
 诚实边界：只用价+量，没用买卖盘口。18.5% 意味着每推 5 次约 1 次真封板，
          所以只作为「盯盘提示」，不是买入指令。
 
 时间闸门：只在 9:35~14:50 运行；其余时段直接退出。
-每天最多推 3 次（每次最多 3 只），避免刷屏。
+不再限制每天推送封数与每封只数——只保留「同一只票当天不重复推」。
 """
 import os, sys, json, gzip, pickle, smtplib, ssl, time
 import urllib.request
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from email.header import Header
@@ -106,7 +107,7 @@ def main():
     Q = quotes(codes)
     print('行情 %d 只' % len(Q), flush=True)
 
-    # 当天已推送过的票不再推（避免同一只票 5 分钟内重复轰炸）
+    # 当天已推送过的票不再推（同一只票当天不重复推）
     sent_fp = os.path.join(LOG, 'seal_sent_%s.json' % now.strftime('%Y%m%d'))
     sent = {}
     if os.path.exists(sent_fp):
@@ -120,12 +121,17 @@ def main():
             continue
         if c not in ref:
             continue
+        # ST / 退市股不过滤时会推 *ST 票（11-24 推过 *ST春兴、11-25 推过 *ST启环）
+        if 'ST' in v['name'] or '退' in v['name']:
+            continue
         v5, last_close = ref[c]
         prev = v['prev'] if v['prev'] > 0 else last_close
         p = v['price']
         if prev <= 0 or p <= 0 or v['high'] <= 0:
             continue
-        limit = round(prev * 1.10, 2)
+        # 涨停价用 Decimal 四舍五入到分；float round(13.145,2)=13.14 会算错 1 分
+        limit = float((Decimal(str(prev)) * Decimal('1.10')).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP))
         # 只推「今日尚未触板」的票 —— 11 年回测：一次封死 +3.45%，
         # 开过板再追 -2.94%，逐年差值 2.16~20.64 点从未反转
         if v['high'] >= limit * 0.998:
@@ -162,10 +168,11 @@ def main():
                          dist=round(dist, 2), gap=round((p / prev - 1) * 100, 2),
                          above=round(p / avg, 3), vr=round(vr, 2)))
     hits.sort(key=lambda x: x['dist'])
-    hits = hits[:2]
+    # 已删除 hits[:2] 与每日 3 封限制：本周实测 16 封 25 只、收盘封板率 44%，
+    # 限制只会自废额度（11-25 金牛化工 10:19/10:59 被推两次）。
     print('命中 %d 只' % len(hits), flush=True)
 
-    # 记录本次推送的票
+    # 记录本次推送的票（同一只当天不重复推，唯一保留的去重）
     if hits and not dry:
         for h in hits:
             sent[h['code']] = now.strftime('%H:%M')
@@ -173,12 +180,6 @@ def main():
             json.dump(sent, open(sent_fp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
         except Exception:
             pass
-    st = os.path.join(LOG, 'seal_count_%s.txt' % now.strftime('%Y%m%d'))
-    if not dry and not force and os.path.exists(st):
-        n = int(open(st).read().strip() or 0)
-        if n >= 3:
-            print('今日已推 3 次，跳过', flush=True)
-            return
 
     if not hits:
         return
@@ -211,8 +212,7 @@ def main():
     else:
         send(subj, html)
         print('已发：%s' % subj, flush=True)
-        n = int(open(st).read()) if os.path.exists(st) else 0
-        open(st, 'w').write(str(n + 1))
+        # 不再写 seal_count；封数限制已删除
     with open(os.path.join(LOG, 'send.log'), 'a', encoding='utf-8') as f:
         f.write('%s | %s | %d只 | %s\n' % (now.strftime('%Y-%m-%d %H:%M:%S'), subj,
                                            len(hits), 'DRY' if dry else 'OK'))
