@@ -13,13 +13,9 @@ on:
     - cron: '0 23 * * 0-4'
     - cron: '0 0 * * 1-5'
     - cron: '0 1 * * 1-5'
-    # 盘中封板预警：北京 9:35~14:50 = UTC 1:35~6:50，每 5 分钟
-    - cron: '*/5 1-6 * * 1-5'
-    # 整点/半点保底：GitHub 会限流高频 cron，多触发点提高覆盖率
-    - cron: '0 1-6 * * 1-5'
-    - cron: '30 1-6 * * 1-5'
-    - cron: '15 1-6 * * 1-5'
-    - cron: '45 1-6 * * 1-5'
+    # 盘中封板预警：北京 9:00 启动一个 job，自旋跑到 14:50（320 分钟）
+    # Linux cron 是 UTC，北京 9:00 = UTC 1:00
+    - cron: '0 1 * * 1-5'
   workflow_dispatch:
     inputs:
       job:
@@ -131,9 +127,10 @@ jobs:
   seal:
     if: |
       github.event_name == 'workflow_dispatch' && inputs.job == 'seal' ||
-      github.event_name == 'schedule' && github.event.schedule == '*/5 1-6 * * 1-5'
+      github.event_name == 'schedule' && github.event.schedule == '0 1 * * 1-5'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 交易时段 320 分钟 < GitHub 单 job 上限 360 分钟
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -151,4 +148,16 @@ jobs:
           ARGS=""
           if [ "${{ inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
           if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
-          INTRADAY_ROUNDS=4 INTRADAY_GAP=600 python intraday_loop.py $ARGS
+          # 一个 job 跑到 14:50；INTRADAY_ROUNDS=0 表示不限轮数
+          INTRADAY_ROUNDS=0 INTRADAY_GAP=0 python intraday_loop.py $ARGS
+      - name: 归档盘中去重状态（seal_sent 跨 job 持久）
+        if: always()
+        run: |
+          git config user.name "signal-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -f _push_logs/seal_sent_*.json _push_logs/seal_count_*.txt _push_logs/send.log 2>/dev/null || true
+          if git diff --cached --quiet; then echo "无新增"; else
+            git commit -m "seal logs $(date -u +%F-%H%M)" || true
+            git pull --rebase origin main || true
+            git push origin main || true
+          fi
