@@ -4,7 +4,7 @@ seal_predict.py —— 盘中「即将封板」预警
 
 规则（样本外 222 次验证）：
   距涨停 1.2%~2% ＋ 现价在当日均价上方 ＋ 当日量能放大(>1.5倍5日均量)
-  → 封板率 18.5%（全样本基础率 3.0%），平均提前 1.8 分钟
+  → 封板率 18.5%（全样本基础率 3.0%，提升约 6 倍），平均提前 1.8 分钟
 
 诚实边界：只用价+量，没用买卖盘口。18.5% 意味着每推 5 次约 1 次真封板，
          所以只作为「盯盘提示」，不是买入指令。
@@ -107,7 +107,7 @@ def main():
     Q = quotes(codes)
     print('行情 %d 只' % len(Q), flush=True)
 
-    # 当天已推送过的票不再推（同一只票当天不重复推）
+    # 当天已推送过的票不再推（避免同一只票 5 分钟内重复轰炸）
     sent_fp = os.path.join(LOG, 'seal_sent_%s.json' % now.strftime('%Y%m%d'))
     sent = {}
     if os.path.exists(sent_fp):
@@ -184,25 +184,23 @@ def main():
     if not hits:
         return
 
+    # 标题直接给关键字段：名称(代码) 现价→涨停价，收件箱不点开就能判断
+    parts = ['%s(%s) %.2f→%.2f' % (h['name'], h['code'], h['price'], h['limit']) for h in hits]
+    subj = '【封板%s】%s %s' % (now.strftime('%H:%M'), len(hits), ' | '.join(parts))
+
+    # 正文只保留差异信息；固定废话（规则/样本外/盯盘提示）不再每封重复
     body = ['<div style="font-family:Microsoft YaHei,sans-serif;max-width:720px;color:#111">']
-    body.append('<h2 style="font-size:17px;color:#c00">盘中封板预警 · %s</h2>' % now.strftime('%H:%M'))
-    body.append('<p style="font-size:12px;color:#6b7280">规则：距涨停 1.2~2% ＋ 价在均价上方 ＋ 量能>1.5倍。'
-                '样本外 222 次验证 <b>封板率 18.5%</b>（基础率 3.0%），平均提前 1.8 分钟。'
-                '<b>是盯盘提示，不是买入指令</b>。</p>')
     body.append('<table style="width:100%;border-collapse:collapse;font-size:13px">')
-    body.append('<tr style="background:#f9fafb"><th align=left>代码</th><th align=left>名称</th>'
+    body.append('<tr style="background:#f9fafb"><th align=left>名称(代码)</th>'
                 '<th align=right>现价</th><th align=right>涨停价</th><th align=right>距涨停</th>'
-                '<th align=right>当日涨幅</th><th align=right>量能</th></tr>')
+                '<th align=right>涨幅</th><th align=right>量能</th></tr>')
     for h in hits:
-        body.append('<tr><td><b>%s</b></td><td>%s</td><td align=right>%.2f</td>'
+        body.append('<tr><td><b>%s(%s)</b></td><td align=right>%.2f</td>'
                     '<td align=right>%.2f</td><td align=right style="color:#c00"><b>%.2f%%</b></td>'
                     '<td align=right>%+.2f%%</td><td align=right>%.1f倍</td></tr>' % (
-                        h['code'], h['name'], h['price'], h['limit'], h['dist'], h['gap'], h['vr']))
-    body.append('</table>')
-    body.append('<p style="font-size:12px;color:#6b7280">盯盘：封板瞬间挂单；封不住就放弃，不追。</p></div>')
+                        h['name'], h['code'], h['price'], h['limit'], h['dist'], h['gap'], h['vr']))
+    body.append('</table></div>')
     html = ''.join(body)
-    subj = '【封板预警】%s %d只 距涨停%s%%' % (
-        now.strftime('%H:%M'), len(hits), '/'.join('%.1f' % h['dist'] for h in hits))
 
     if dry:
         print('[DRY]', subj, flush=True)
