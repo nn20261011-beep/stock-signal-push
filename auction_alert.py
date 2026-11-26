@@ -3,19 +3,21 @@
 auction_alert.py —— 集合竞价梯队数据邮件（纯数据，不做判断，不套战法）
 
 标题：【竞价梯队 09:26】5板1 4板2 3板4 2板4 首板35
-正文：① 指数表  ② 昨日涨停股按连板梯队分组
+正文：① 指数 8 项  ② 昨日涨停股按连板梯队分组
 
-口径：
+口径（2026-11-26 修正）：
   竞价涨幅 = 今开 / 昨收 − 1
-  量比昨日 = 今日竞价量 / 昨日全天成交量
-  量比5日  = 今日竞价量 / 前 5 个交易日日均成交量
-  题材内排名 = 该股在其主题材的昨日涨停股里按连板数排名（同板按竞价涨幅降序）
+  量比昨日 = 今日竞价量 / **昨日竞价量**（不是昨日全天量）
+  量比5日  = 今日竞价量 / 前 5 个交易日竞价量均值
+  题材     = 东财 F10 CoreConception 细分概念串（比 slist 多 10 个概念，如人形机器人/CPO/先进封装）
+  题材昨日涨停数 / 题材内排名 = 按「主概念」算，主概念=该股概念中池内命中最多的
+  近5日开盘涨幅 = 逐日 open/prev_close−1，旧→新；一字 = 开=高=低=收=涨停价
 
 数据源：
-  昨日涨停与连板：_hist.pkl.gz 逐只算连续涨停天数
-  今开/竞价量：腾讯 qt.gtimg.cn f[5]/f[6]
-  昨日量/前5日量：日线 volume
-  题材：东财 push2 slist（本地 _concept.json 只覆盖 172 概念，仅作补充）
+  昨日涨停与连板：_hist.pkl.gz（evening job 每晚更新）
+  今开：腾讯 f[5]；今日竞价量：9:25 用 f[6]（待实测），回放用分时 0930 首笔
+  昨日/前5日竞价量：腾讯 day/query 每日 0930 首笔累计量
+  题材：东财 emweb PC_HSF10/CoreConception（失败回落 push2 slist）
   指数：腾讯 sh000001/sz399001/sz399006 + hkHSI + usDJI/usIXIC；日经/KOSPI 用新浪 b_NKY/b_KOSPI
 
 时间：cron 7:00/7:30/8:00 三点错峰启动，job 内自旋等到 9:25:05 取数，9:26 前发出。
@@ -24,6 +26,7 @@ import os, sys, json, gzip, pickle, smtplib, ssl, time, urllib.request
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timezone, timedelta
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from email.mime.text import MIMEText
 from email.header import Header
 
@@ -32,20 +35,21 @@ BJ = timezone(timedelta(hours=8))
 LOG = os.path.join(BASE, '_push_logs')
 os.makedirs(LOG, exist_ok=True)
 UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-UA_EM = {**UA, 'Referer': 'https://quote.eastmoney.com/'}
+UA_EM = {**UA, 'Referer': 'https://emweb.securities.eastmoney.com/'}
 SMTP_USER = os.environ.get('SMTP_USER', 'h1533165068@qq.com')
 SMTP_PASS = os.environ.get('SMTP_PASS', 'xfboalpjikugjfgg')
 MAIL_TO = os.environ.get('MAIL_TO', 'h1533165068@qq.com')
 
 SKIP = ['板块', '首亏', '预减', '预增', '高市净率', '破发', '昨日', '热股', '最近多板',
-        '微利', 'ST', '重仓', '融资融券', '转债', '增持', '回购', '举牌', '低价', '连续亏损']
+        '微利', 'ST', '重仓', '融资融券', '转债', '增持', '回购', '举牌', '低价', '连续亏损',
+        '高振幅', '高换手', '含一字', '打二板']
 GENERIC = ['沪股通', '深股通', '标准普尔', '富时罗素', 'MSCI中国', '中证500', '中盘股', '小盘股',
            '大盘股', '中盘成长', '小盘成长', '大盘成长', '题材股', '高市盈率', '破增发价股', '破净股',
-           '股权激励', '基金减仓', '基金增仓', 'QFII新进', '私募新进', '保险新进', '外资背景',
+           '股权激励', '基金减仓', '基金增仓', 'QFII新进', 'QFII重仓', '私募新进', '保险新进', '外资背景',
            '趋势股', '近期新高', '百日新高', '历史新高', '反转股', '价值股', '成长股',
            '消费风格', '科技风格', '央国企改革', 'AH股', 'AB股', '上证380', '深证100R', 'HS300_',
            'IPO受益', '中特估', '周期股', '百元股', '低价股', '超跌股', '股权分散',
-           '业绩预降', '2026中报扭亏', '2026中报预减', '高成长股', '深成500', '标普500']
+           '业绩预降', '2026中报扭亏', '2026中报预减', '高成长股', '深成500', '标普500', '创投']
 
 
 def zt_price(pc):
@@ -58,7 +62,6 @@ def load_hist():
 
 
 def yesterday_limit_up(K):
-    """返回 (昨日日期, [dict])，逐只算连续涨停天数"""
     days = sorted({d for v in K.values() for d in v})
     if not days:
         return None, []
@@ -84,13 +87,29 @@ def yesterday_limit_up(K):
                 bd += 1
             else:
                 break
-        out.append(dict(code=c, prev_close=pc, bd=bd, prev_vol=v[y][4],
-                        v5=sum(v[x][4] for x in ds[max(0, i - 5):i]) / 5 if i >= 1 else 0))
+        seq = []
+        for d in days[-5:]:
+            if d not in v:
+                seq.append(None)
+                continue
+            dss = sorted(v)
+            k = dss.index(d)
+            if k < 1:
+                seq.append(None)
+                continue
+            p0 = v[dss[k - 1]][1]
+            o, cl, hi, lo = v[d][0], v[d][1], v[d][2], v[d][3]
+            if p0 <= 0 or o <= 0:
+                seq.append(None)
+                continue
+            z = zt_price(p0)
+            seq.append(dict(day=d, gapo=round((o / p0 - 1) * 100, 2),
+                            oneword=(abs(o - z) < 0.005 and hi == lo == cl)))
+        out.append(dict(code=c, prev_close=pc, bd=bd, seq5=seq))
     return y, out
 
 
 def fetch_quotes(codes):
-    """腾讯实时：f[5]今开、f[6]成交量(手)、f[4]昨收、f[1]名称"""
     out = {}
     for i in range(0, len(codes), 60):
         chunk = codes[i:i + 60]
@@ -116,27 +135,52 @@ def fetch_quotes(codes):
     return out
 
 
-def fetch_boards(codes):
-    """东财板块归属；断连重试 3 次"""
-    out = {}
-    for c in codes:
-        secid = ('1.' if c.startswith('6') else '0.') + c
-        u = ('https://push2.eastmoney.com/api/qt/slist/get?spt=3&fltt=1&invt=2'
-             '&fields=f12,f13,f14&secid=%s&pn=1&np=1&pz=40' % secid)
-        got = []
-        for _ in range(3):
-            try:
-                j = json.loads(urllib.request.urlopen(
-                    urllib.request.Request(u, headers=UA_EM), timeout=12).read())
-                got = [x['f14'] for x in ((j.get('data') or {}).get('diff') or [])
-                       if isinstance(x, dict) and x.get('f14')
-                       and not any(k in x['f14'] for k in SKIP)]
-                break
-            except Exception:
-                time.sleep(0.3)
-        out[c] = got
-        time.sleep(0.06)
-    return out
+def core_concepts(code):
+    pre = 'SH' if code.startswith('6') else 'SZ'
+    u = 'https://emweb.securities.eastmoney.com/PC_HSF10/CoreConception/PageAjax?code=%s%s' % (pre, code)
+    for _ in range(2):
+        try:
+            j = json.loads(urllib.request.urlopen(
+                urllib.request.Request(u, headers=UA_EM), timeout=12).read())
+            names = [x['BOARD_NAME'] for x in j.get('ssbk', [])]
+            got = [x for x in names if not any(k in x for k in SKIP) and x not in GENERIC]
+            if got:
+                return got
+        except Exception:
+            pass
+        time.sleep(0.3)
+    secid = ('1.' if code.startswith('6') else '0.') + code
+    u2 = ('https://push2.eastmoney.com/api/qt/slist/get?spt=3&fltt=1&invt=2'
+          '&fields=f12,f13,f14&secid=%s&pn=1&np=1&pz=40' % secid)
+    try:
+        j = json.loads(urllib.request.urlopen(
+            urllib.request.Request(u2, headers=UA_EM), timeout=10).read())
+        names = [x['f14'] for x in ((j.get('data') or {}).get('diff') or []) if isinstance(x, dict)]
+        return [x for x in names if not any(k in x for k in SKIP) and x not in GENERIC]
+    except Exception:
+        return []
+
+
+def minute_auction_vols(code):
+    """近5日每日 0930 首笔累计量（手）"""
+    sec = ('sh' if code.startswith('6') else 'sz') + code
+    u = 'https://web.ifzq.gtimg.cn/appstock/app/day/query?code=' + sec
+    for att in range(4):
+        try:
+            j = json.loads(urllib.request.urlopen(
+                urllib.request.Request(u, headers=UA), timeout=15).read().decode('utf-8', 'ignore'))
+            out = {}
+            for k, v in (j.get('data') or {}).items():
+                for blk in (v.get('data') or []):
+                    d = blk.get('date')
+                    if d and blk['data']:
+                        out[d] = float(blk['data'][0].split()[2])
+            if out:
+                return out
+        except Exception:
+            pass
+        time.sleep(0.6 * (att + 1))
+    return {}
 
 
 def fetch_indexes():
@@ -179,7 +223,7 @@ def build(rows, idx):
     parts = ['%s%d' % ('首板' if b == 1 else '%d板' % b, cnt[b]) for b in sorted(cnt, reverse=True)]
     subj = '【竞价梯队 09:26】' + ' '.join(parts)
 
-    body = ['<div style="font-family:Microsoft YaHei,sans-serif;max-width:1180px;color:#111">']
+    body = ['<div style="font-family:Microsoft YaHei,sans-serif;max-width:1500px;color:#111">']
     body.append('<table style="border-collapse:collapse;font-size:13px;margin-bottom:16px;min-width:360px">'
                 '<tr style="background:#f3f4f6"><th align=left style="padding:6px 14px">指数</th>'
                 '<th align=right style="padding:6px 14px">点位</th>'
@@ -196,35 +240,42 @@ def build(rows, idx):
                     % (nm, px, color, c))
     body.append('</table>')
 
-    body.append('<table style="border-collapse:collapse;font-size:12.5px">')
     heads = ['梯队', '名称(代码)', '昨收', '今开', '竞价涨幅', '量比昨日', '量比5日',
-             '题材', '题材昨日涨停数', '题材内排名']
+             '近5日开盘涨幅', '一字', '题材', '题材涨停', '题材内排名']
+    body.append('<table style="border-collapse:collapse;font-size:11.5px">')
     body.append('<tr style="background:#f3f4f6">' + ''.join(
-        '<th align=%s style="padding:6px 9px;white-space:nowrap">%s</th>'
-        % ('left' if h in ('梯队', '名称(代码)', '题材') else 'right', h) for h in heads) + '</tr>')
+        '<th align=%s style="padding:6px 8px;white-space:nowrap">%s</th>'
+        % ('left' if h in ('梯队', '名称(代码)', '题材', '近5日开盘涨幅') else 'right', h) for h in heads) + '</tr>')
     last = None
     for r in rows:
         if last is not None and r['bd'] != last:
-            body.append('<tr><td colspan=10 style="border-top:2px solid #d1d5db;padding:0"></td></tr>')
+            body.append('<tr><td colspan=12 style="border-top:2px solid #d1d5db;padding:0"></td></tr>')
         last = r['bd']
         g = r['gapo']
         color = '#c0392b' if g > 0 else ('#1e8449' if g < 0 else '#333')
+        seq = r.get('seq5') or []
+        seq_txt = '/'.join(('%+.1f' % s['gapo']) if s else '—' for s in seq)
+        n_one = sum(1 for s in seq if s and s['oneword'])
+        con_txt = '/'.join(r.get('concepts', [])[:6]) or '—'
         body.append('<tr>'
-                    '<td style="padding:5px 9px;border-top:1px solid #eef0f2">%s</td>'
-                    '<td style="padding:5px 9px;border-top:1px solid #eef0f2"><b>%s(%s)</b></td>'
-                    '<td align=right style="padding:5px 9px;border-top:1px solid #eef0f2">%.2f</td>'
-                    '<td align=right style="padding:5px 9px;border-top:1px solid #eef0f2">%.2f</td>'
-                    '<td align=right style="padding:5px 9px;border-top:1px solid #eef0f2;color:%s"><b>%+.2f%%</b></td>'
-                    '<td align=right style="padding:5px 9px;border-top:1px solid #eef0f2">%s</td>'
-                    '<td align=right style="padding:5px 9px;border-top:1px solid #eef0f2">%s</td>'
-                    '<td style="padding:5px 9px;border-top:1px solid #eef0f2">%s</td>'
-                    '<td align=right style="padding:5px 9px;border-top:1px solid #eef0f2">%d</td>'
-                    '<td align=right style="padding:5px 9px;border-top:1px solid #eef0f2">%s</td></tr>' % (
+                    '<td style="padding:5px 8px;border-top:1px solid #eef0f2">%s</td>'
+                    '<td style="padding:5px 8px;border-top:1px solid #eef0f2"><b>%s(%s)</b></td>'
+                    '<td align=right style="padding:5px 8px;border-top:1px solid #eef0f2">%.2f</td>'
+                    '<td align=right style="padding:5px 8px;border-top:1px solid #eef0f2">%.2f</td>'
+                    '<td align=right style="padding:5px 8px;border-top:1px solid #eef0f2;color:%s"><b>%+.2f%%</b></td>'
+                    '<td align=right style="padding:5px 8px;border-top:1px solid #eef0f2">%s</td>'
+                    '<td align=right style="padding:5px 8px;border-top:1px solid #eef0f2">%s</td>'
+                    '<td style="padding:5px 8px;border-top:1px solid #eef0f2;color:#6b7280">%s</td>'
+                    '<td align=right style="padding:5px 8px;border-top:1px solid #eef0f2">%s</td>'
+                    '<td style="padding:5px 8px;border-top:1px solid #eef0f2">%s</td>'
+                    '<td align=right style="padding:5px 8px;border-top:1px solid #eef0f2">%d</td>'
+                    '<td align=right style="padding:5px 8px;border-top:1px solid #eef0f2">%s</td></tr>' % (
                         '首板' if r['bd'] == 1 else '%d板' % r['bd'], r['name'], r['code'],
                         r['prev_close'], r['open'], color, g,
                         ('%.2f' % r['vr_prev']) if r.get('vr_prev') is not None else '—',
                         ('%.2f' % r['vr_5']) if r.get('vr_5') is not None else '—',
-                        r['main_con'], r['con_zt_n'], r['con_rank']))
+                        seq_txt, ('%d' % n_one) if n_one else '—',
+                        con_txt, r['con_zt_n'], r['con_rank']))
     body.append('</table></div>')
     return subj, ''.join(body)
 
@@ -261,23 +312,42 @@ def main():
     if not rows:
         return
 
-    Q = fetch_quotes([r['code'] for r in rows])
-    B = fetch_boards([r['code'] for r in rows])
-    print('实时 %d 只 / 板块 %d 只（有概念 %d）' % (
-        len(Q), len(B), sum(1 for v in B.values() if v)), flush=True)
+    codes = [r['code'] for r in rows]
+    Q = fetch_quotes(codes)
+    print('实时行情 %d 只' % len(Q), flush=True)
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        cons = dict(zip(codes, ex.map(core_concepts, codes)))
+        vols = dict(zip(codes, ex.map(minute_auction_vols, codes)))
+    print('概念 %d / 分时 %d' % (sum(1 for v in cons.values() if v),
+                              sum(1 for v in vols.values() if v)), flush=True)
+
+    days_all = sorted({d for v in K.values() for d in v})
+    today_key = days_all[-1].replace('-', '')
+    prev_keys = [d.replace('-', '') for d in days_all[-6:-1]]
 
     out = []
     for r in rows:
-        q = Q.get(r['code'])
+        c = r['code']
+        q = Q.get(c)
         if not q or q['open'] <= 0 or r['prev_close'] <= 0:
             continue
-        core = [x for x in B.get(r['code'], []) if x not in GENERIC]
-        out.append(dict(code=r['code'], name=q['name'], prev_close=r['prev_close'],
-                        open=q['open'], gapo=round((q['open'] / r['prev_close'] - 1) * 100, 2),
-                        bd=r['bd'], auc_vol=q['vol'],
-                        vr_prev=round(q['vol'] * 100 / r['prev_vol'], 3) if r['prev_vol'] > 0 else None,
-                        vr_5=round(q['vol'] * 100 / r['v5'], 3) if r['v5'] > 0 else None,
-                        core=core))
+        vv = vols.get(c) or {}
+        auc_today = vv.get(today_key)
+        src = 'minute'
+        if auc_today is None:
+            auc_today = q['vol']
+            src = 'f6'
+        auc_yday = vv.get(prev_keys[-1]) if prev_keys else None
+        pv = [vv[d] for d in prev_keys if d in vv]
+        auc5 = sum(pv) / len(pv) if pv else None
+        out.append(dict(
+            code=c, name=q['name'], prev_close=r['prev_close'], open=q['open'],
+            gapo=round((q['open'] / r['prev_close'] - 1) * 100, 2), bd=r['bd'],
+            seq5=r.get('seq5') or [], concepts=cons.get(c) or [],
+            auc_src=src, auc_today=auc_today,
+            vr_prev=round(auc_today / auc_yday, 2) if (auc_today and auc_yday) else None,
+            vr_5=round(auc_today / auc5, 2) if (auc_today and auc5) else None))
     if not out:
         print('无可用数据', flush=True)
         return
@@ -285,12 +355,12 @@ def main():
     for r in out:
         cnt = Counter()
         for x in out:
-            for c in set(r['core']) & set(x['core']):
+            for c in set(r['concepts']) & set(x['concepts']):
                 cnt[c] += 1
         if cnt:
             r['main_con'], r['con_zt_n'] = cnt.most_common(1)[0]
         else:
-            r['main_con'] = r['core'][0] if r['core'] else '—'
+            r['main_con'] = r['concepts'][0] if r['concepts'] else '—'
             r['con_zt_n'] = 0
     by = defaultdict(list)
     for r in out:
@@ -304,6 +374,7 @@ def main():
     idx = fetch_indexes()
     subj, html = build(out, idx)
     print('标题:', subj, flush=True)
+    print('竞价量来源分布:', Counter(r['auc_src'] for r in out), flush=True)
 
     if dry:
         print('[DRY]', subj, flush=True)
