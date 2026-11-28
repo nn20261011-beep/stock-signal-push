@@ -7,10 +7,10 @@ on:
     - cron: '0 10 * * 1-5'
     - cron: '0 12 * * 1-5'
     - cron: '0 14 * * 1-5'
-    # 竞价梯队：北京 07:00 / 07:30 / 08:00 = UTC 23:00 / 23:30(前一日) / 00:00
-    # 三点错峰启动，job 内自旋等到 9:25:05 取数，9:26 前发出
+    # 竞价梯队：北京 06:00 / 07:00 / 08:00 = UTC 22:00 / 23:00(前一日) / 00:00
+    # 必须早启动 + 长 timeout：11-27 因 timeout=10 被杀，未能等到 9:25
+    - cron: '0 22 * * 0-4'
     - cron: '0 23 * * 0-4'
-    - cron: '30 23 * * 0-4'
     - cron: '0 0 * * 1-5'
     # 早间模式简报（保留原逻辑）：北京 9:00 = UTC 1:00
     - cron: '0 1 * * 1-5'
@@ -126,9 +126,10 @@ jobs:
   auction_alert:
     if: |
       github.event_name == 'workflow_dispatch' && inputs.job == 'auction_alert' ||
-      github.event_name == 'schedule' && contains(fromJSON('["0 23 * * 0-4", "30 23 * * 0-4", "0 0 * * 1-5"]'), github.event.schedule)
+      github.event_name == 'schedule' && contains(fromJSON('["0 22 * * 0-4", "0 23 * * 0-4", "0 0 * * 1-5"]'), github.event.schedule)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 6:00 启动后需自旋 3.5 小时到 9:25；10 分钟会在 9:26 前被杀（11-27 实测）
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -140,7 +141,23 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
           TZ: Asia/Shanghai
-        run: python auction_alert.py
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # GitHub 文件锁：三个错峰点只有一个真正发信
+          LOCK=_push_logs/auction_alert_lock.txt
+          TODAY=$(TZ=Asia/Shanghai date +%Y%m%d)
+          if curl -sf -H "Authorization: token $GH_TOKEN" \
+            "https://raw.githubusercontent.com/nn20261011-beep/stock-signal-push/main/$LOCK" | grep -q "$TODAY"; then
+            echo "今日竞价邮件已发，退出"; exit 0
+          fi
+          python auction_alert.py || exit 1
+          echo "$TODAY $(TZ=Asia/Shanghai date +%H:%M:%S)" > $LOCK
+          git config user.name "signal-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -f $LOCK _push_logs/send.log 2>/dev/null || true
+          git commit -m "auction alert $TODAY" || true
+          git pull --rebase origin main || true
+          git push origin main || true
 
   seal:
     if: |
